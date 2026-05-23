@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ascii tree</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Mono', monospace;
+      background: #fafaf9;
+      color: #18181b;
+      min-height: 100vh;
+    }
+
+    textarea:focus {
+      border-color: #a1a1aa !important;
+      outline: none;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #app {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      min-height: 100vh;
+    }
+
+    .header {
+      margin-bottom: 1.5rem;
+    }
+
+    .title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #18181b;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #71717a;
+      margin-top: 4px;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 2px;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid #e4e4e7;
+      padding-bottom: 0;
+    }
+
+    .tab-btn {
+      padding: 6px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      border: 1px solid transparent;
+      border-bottom: none;
+      margin-bottom: -1px;
+      border-radius: 6px 6px 0 0;
+      transition: all 0.1s;
+      background: transparent;
+      color: #71717a;
+    }
+
+    .tab-btn.active {
+      background: #fff;
+      border-color: #e4e4e7;
+      color: #18181b;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .panel {
+      background: #fff;
+      border: 1px solid #e4e4e7;
+      border-radius: 10px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .panel-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #71717a;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    textarea.main-textarea {
+      width: 100%;
+      min-height: 300px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12.5px;
+      background: #fafaf9;
+      color: #18181b;
+      border: 1px solid #e4e4e7;
+      border-radius: 6px;
+      padding: 0.75rem;
+      resize: vertical;
+      line-height: 1.7;
+      outline: none;
+    }
+
+    .output {
+      width: 100%;
+      min-height: 300px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12.5px;
+      background: #fafaf9;
+      color: #18181b;
+      border: 1px solid #e4e4e7;
+      border-radius: 6px;
+      padding: 0.75rem;
+      white-space: pre;
+      overflow: auto;
+      line-height: 1.7;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn-primary {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-family: 'DM Mono', monospace;
+      cursor: pointer;
+      border-radius: 6px;
+      border: 1px solid #18181b;
+      background: #18181b;
+      color: #fff;
+      transition: opacity 0.1s;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-family: 'DM Mono', monospace;
+      cursor: pointer;
+      border-radius: 6px;
+      border: 1px solid #e4e4e7;
+      background: transparent;
+      color: #52525b;
+      transition: background 0.1s;
+    }
+
+    .btn-copy {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-family: 'DM Mono', monospace;
+      cursor: pointer;
+      border-radius: 6px;
+      border: 1px solid #d1fae5;
+      background: transparent;
+      color: #6b7280;
+      transition: all 0.15s;
+    }
+
+    .btn-copy.copied {
+      border-color: #4ade80;
+      background: #f0fdf4;
+      color: #16a34a;
+    }
+
+    .syntax-ref {
+      background: #fafaf9;
+      border: 1px solid #f0f0ef;
+      border-radius: 6px;
+      padding: 0.6rem 0.75rem;
+    }
+
+    .syntax-row {
+      display: flex;
+      gap: 12px;
+      align-items: baseline;
+      margin-bottom: 3px;
+      font-size: 11.5px;
+    }
+
+    .syntax-sym {
+      color: #2563eb;
+      min-width: 64px;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .syntax-desc {
+      color: #71717a;
+    }
+
+    .chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1px solid #e4e4e7;
+      cursor: pointer;
+      color: #52525b;
+      background: #fff;
+      transition: border-color 0.1s;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .chip:hover {
+      border-color: #a1a1aa;
+    }
+
+    .status {
+      font-size: 12px;
+      color: #71717a;
+      min-height: 18px;
+    }
+
+    .status.error { color: #dc2626; }
+    .status.success { color: #16a34a; }
+
+    .hint {
+      font-size: 11.5px;
+      color: #a1a1aa;
+      line-height: 1.6;
+    }
+
+    textarea.prompt-textarea {
+      width: 100%;
+      min-height: 80px;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      background: #fafaf9;
+      color: #18181b;
+      border: 1px solid #e4e4e7;
+      border-radius: 6px;
+      padding: 0.75rem;
+      resize: vertical;
+      line-height: 1.7;
+      outline: none;
+    }
+
+    .ai-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    #tab-manual { display: block; }
+    #tab-ai { display: none; }
+  </style>
+</head>
+<body>
+
+<div style="background:#2c2420;padding:8px 20px;position:sticky;top:0;z-index:1000"><a href="/" style="color:#f7f4ef;font-size:12px;font-family:system-ui,sans-serif;text-decoration:none;letter-spacing:0.05em;opacity:0.8">← Tiny App Town</a></div>
+
+<div id="app">
+  <div class="header">
+    <div class="title">ascii tree</div>
+    <div class="subtitle">generate project structure diagrams from plain text</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-btn-manual" onclick="switchTab('manual')">✎ manual</button>
+    <button class="tab-btn" id="tab-btn-ai" onclick="switchTab('ai')">✦ AI generate</button>
+  </div>
+
+  <!-- Manual tab -->
+  <div id="tab-manual">
+    <div class="row">
+      <div class="panel">
+        <div class="panel-label">define structure</div>
+        <div class="syntax-ref">
+          <div class="syntax-row"><span class="syntax-sym">#</span><span class="syntax-desc">root (depth 0)</span></div>
+          <div class="syntax-row"><span class="syntax-sym">##</span><span class="syntax-desc">depth 1</span></div>
+          <div class="syntax-row"><span class="syntax-sym">###</span><span class="syntax-desc">depth 2</span></div>
+          <div class="syntax-row"><span class="syntax-sym">trailing /</span><span class="syntax-desc">marks folder</span></div>
+          <div class="syntax-row"><span class="syntax-sym">| note</span><span class="syntax-desc">inline comment</span></div>
+        </div>
+        <textarea class="main-textarea" id="manual-syntax" spellcheck="false" oninput="onManualInput(this.value)"></textarea>
+        <div class="actions">
+          <button class="btn" onclick="clearManual()">clear</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-label">ascii output</div>
+        <div class="output" id="manual-output"></div>
+        <div class="actions">
+          <button class="btn-copy" id="copy-manual-btn" onclick="copyText('manual-output', 'copy-manual-btn')">⎘ copy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI tab -->
+  <div id="tab-ai">
+    <div class="ai-section">
+      <div class="panel">
+        <div class="panel-label">describe your project</div>
+        <p class="hint">Describe your stack or architecture in plain language. Claude generates the syntax and ASCII tree.</p>
+        <div class="chips" id="example-chips"></div>
+        <textarea
+          class="prompt-textarea"
+          id="ai-prompt"
+          placeholder="e.g. a FastAPI backend with JWT auth, PostgreSQL, Alembic migrations, pytest tests, and Docker..."
+          spellcheck="false"
+        ></textarea>
+        <div class="actions">
+          <button class="btn-primary" id="generate-btn" onclick="aiGenerate()">✦ generate with AI</button>
+        </div>
+        <div class="status" id="ai-status"></div>
+      </div>
+
+      <div class="row" id="ai-results" style="display:none">
+        <div class="panel">
+          <div class="panel-label">generated syntax</div>
+          <textarea class="main-textarea" id="ai-syntax" spellcheck="false" oninput="onAiSyntaxInput(this.value)"></textarea>
+          <div class="actions">
+            <button class="btn-primary" onclick="editInManual()">← edit in manual</button>
+            <button class="btn-copy" id="copy-ai-syntax-btn" onclick="copyText('ai-syntax-val', 'copy-ai-syntax-btn', 'copy syntax')">⎘ copy syntax</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-label">ascii output</div>
+          <div class="output" id="ai-output"></div>
+          <div class="actions">
+            <button class="btn-copy" id="copy-ai-output-btn" onclick="copyText('ai-output', 'copy-ai-output-btn')">⎘ copy</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Pure logic (verbatim from JSX) ───────────────────────────────────────────
+
+const SYNTAX_EXAMPLES = [
+  "FastAPI backend with JWT auth, PostgreSQL, Alembic migrations, pytest, Docker",
+  "React + Vite frontend monorepo with shared UI library",
+  "ML pipeline with feature store, model registry, and serving layer",
+  "Kubernetes microservices with Helm charts and GitOps",
+  "Data platform on Databricks with Delta Lake and dbt",
+];
+
+function parseLine(line) {
+  const trimmed = line.trimEnd();
+  if (!trimmed.trim()) return null;
+  const match = trimmed.match(/^(#+)\s*(.*)/);
+  if (!match) return null;
+  const depth = match[1].length;
+  let rest = match[2].trim();
+  let comment = "";
+  const barIdx = rest.indexOf(" | ");
+  if (barIdx !== -1) {
+    comment = rest.slice(barIdx + 3).trim();
+    rest = rest.slice(0, barIdx).trim();
+  }
+  return { depth, name: rest, comment };
+}
+
+function syntaxToAscii(raw) {
+  const lines = raw.split("\n").map(parseLine).filter(Boolean);
+  if (!lines.length) return "";
+  const root = lines[0];
+  let out = root.name + (root.comment ? "   # " + root.comment : "") + "\n";
+  for (let i = 1; i < lines.length; i++) {
+    const node = lines[i];
+    const depth = node.depth;
+    let isLast = true;
+    for (let j = i + 1; j < lines.length; j++) {
+      if (lines[j].depth < depth) break;
+      if (lines[j].depth === depth) { isLast = false; break; }
+    }
+    let prefix = "";
+    for (let d = 2; d < depth; d++) {
+      let hasMore = false;
+      for (let j = i + 1; j < lines.length; j++) {
+        if (lines[j].depth < d) break;
+        if (lines[j].depth === d) { hasMore = true; break; }
+      }
+      prefix += hasMore ? "│   " : "    ";
+    }
+    const connector = isLast ? "└── " : "├── ";
+    out += prefix + connector + node.name + (node.comment ? "   # " + node.comment : "") + "\n";
+  }
+  return out.trimEnd();
+}
+
+const DEFAULT_SYNTAX = `# my-project/
+## src/
+### components/
+#### Button.tsx | reusable button
+#### Modal.tsx
+### pages/
+#### index.tsx | entry point
+#### about.tsx
+### utils/
+#### api.ts
+#### helpers.ts
+## public/
+### assets/
+#### logo.svg
+### favicon.ico
+## tests/
+### unit/
+### e2e/
+## package.json
+## README.md
+## .gitignore`;
+
+const SYSTEM_PROMPT = `You are a project structure generator. The user describes a software project or architecture.
+Output ONLY the structure in this exact syntax — nothing else, no explanation, no markdown fences:
+
+# root-folder/
+## subfolder/
+### file.ext | optional description
+## another-file.ext
+
+Rules:
+- # = root (exactly one), ## = depth 1, ### = depth 2, #### = depth 3 etc.
+- Folders end with /
+- Add short | comment only for non-obvious files
+- Be realistic and practical for the described stack
+- Depth max 5 levels
+- Output raw syntax only, starting with # on line 1`;
+
+// ─── App state ────────────────────────────────────────────────────────────────
+
+let currentTab = 'manual';
+let aiSyntaxValue = '';
+
+// ─── Tab switching ────────────────────────────────────────────────────────────
+
+function switchTab(id) {
+  currentTab = id;
+  document.getElementById('tab-manual').style.display = id === 'manual' ? 'block' : 'none';
+  document.getElementById('tab-ai').style.display = id === 'ai' ? 'block' : 'none';
+  document.getElementById('tab-btn-manual').classList.toggle('active', id === 'manual');
+  document.getElementById('tab-btn-ai').classList.toggle('active', id === 'ai');
+}
+
+// ─── Manual tab ───────────────────────────────────────────────────────────────
+
+function onManualInput(val) {
+  document.getElementById('manual-output').textContent = syntaxToAscii(val);
+}
+
+function clearManual() {
+  document.getElementById('manual-syntax').value = '';
+  document.getElementById('manual-output').textContent = '';
+}
+
+// ─── Copy button ──────────────────────────────────────────────────────────────
+
+// sourceId can be an element id (div or textarea); for textarea we use .value
+function copyText(sourceId, btnId, defaultLabel) {
+  defaultLabel = defaultLabel || 'copy';
+  const el = document.getElementById(sourceId);
+  // For the ai-syntax textarea we pass a virtual id; handle both cases
+  let text;
+  if (el) {
+    text = el.tagName === 'TEXTAREA' ? el.value : el.textContent;
+  } else if (sourceId === 'ai-syntax-val') {
+    text = aiSyntaxValue;
+  }
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById(btnId);
+    btn.textContent = '✓ copied';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '⎘ ' + defaultLabel;
+      btn.classList.remove('copied');
+    }, 1800);
+  });
+}
+
+// ─── AI tab ───────────────────────────────────────────────────────────────────
+
+function onAiSyntaxInput(val) {
+  aiSyntaxValue = val;
+  document.getElementById('ai-output').textContent = syntaxToAscii(val);
+}
+
+function editInManual() {
+  document.getElementById('manual-syntax').value = aiSyntaxValue;
+  document.getElementById('manual-output').textContent = syntaxToAscii(aiSyntaxValue);
+  switchTab('manual');
+}
+
+function setStatus(msg, type) {
+  const el = document.getElementById('ai-status');
+  el.textContent = msg;
+  el.className = 'status' + (type ? ' ' + type : '');
+}
+
+async function aiGenerate() {
+  const prompt = document.getElementById('ai-prompt').value.trim();
+  if (!prompt) return;
+
+  const btn = document.getElementById('generate-btn');
+  btn.disabled = true;
+  btn.textContent = 'generating...';
+  setStatus('Generating structure...', '');
+  document.getElementById('ai-results').style.display = 'none';
+  aiSyntaxValue = '';
+
+  try {
+    const resp = await fetch('/api/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error.message);
+    const syn = data.content.filter((b) => b.type === 'text').map((b) => b.text).join('').trim();
+    aiSyntaxValue = syn;
+    document.getElementById('ai-syntax').value = syn;
+    document.getElementById('ai-output').textContent = syntaxToAscii(syn);
+    document.getElementById('ai-results').style.display = 'grid';
+    setStatus('Done — edit the syntax or copy the tree.', 'success');
+  } catch (e) {
+    setStatus('Error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✦ generate with AI';
+  }
+}
+
+// ─── Example chips ────────────────────────────────────────────────────────────
+
+function buildChips() {
+  const container = document.getElementById('example-chips');
+  SYNTAX_EXAMPLES.forEach((ex) => {
+    const span = document.createElement('span');
+    span.className = 'chip';
+    span.textContent = ex;
+    span.onclick = () => { document.getElementById('ai-prompt').value = ex; };
+    container.appendChild(span);
+  });
+}
+
+// ─── Cmd+Enter shortcut ───────────────────────────────────────────────────────
+
+document.getElementById('ai-prompt').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault();
+    aiGenerate();
+  }
+});
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+buildChips();
+document.getElementById('manual-syntax').value = DEFAULT_SYNTAX;
+document.getElementById('manual-output').textContent = syntaxToAscii(DEFAULT_SYNTAX);
+</script>
+</body>
+</html>
