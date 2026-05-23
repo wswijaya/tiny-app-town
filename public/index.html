@@ -394,7 +394,7 @@ select.strat-sel:focus{outline:none;border-color:var(--accent2)}
       </div>
       <div id="evo-status" style="display:none;text-align:center;font-size:.8rem;color:var(--ink3);padding:.5rem 0;font-family:var(--sans)"></div>
       <div id="evo-chart-wrap" style="display:none;background:white;border:0.5px solid var(--border2);border-radius:8px;padding:1.25rem;margin-bottom:1rem">
-        <div style="position:relative;width:100%;height:340px"><canvas id="evo-chart"></canvas></div>
+        <div id="evo-chart-container" style="width:100%"></div>
       </div>
       <div id="evo-survivors"></div>
     </div>
@@ -1266,32 +1266,33 @@ function renderEvoChart(history,total){
     borderWidth:1,borderDash:[4,4],pointRadius:0,tension:.3
   });
 
-  document.getElementById('evo-chart-wrap').style.display='block';
+  const wrap=document.getElementById('evo-chart-wrap');
+  wrap.style.display='block';
   if(evoChart){evoChart.destroy();evoChart=null;}
-  setTimeout(()=>{
-    const canvas=document.getElementById('evo-chart');
-    if(!canvas)return;
-    evoChart=new Chart(canvas,{
-      type:'line',
-      data:{labels,datasets},
-      options:{
-        responsive:true,
-        maintainAspectRatio:false,
-        interaction:{mode:'index',intersect:false},
-        scales:{
-          y:{min:0,max:100,title:{display:true,text:'% of population'},
-            ticks:{font:{size:11},color:'#8a847c',callback:v=>v+'%'},
-            grid:{color:'rgba(90,75,55,0.08)'}},
-          x:{ticks:{font:{size:11},color:'#8a847c',maxTicksLimit:12},
-            grid:{display:false}}
-        },
-        plugins:{
-          legend:{position:'right',labels:{font:{size:11},boxWidth:12,padding:8}},
-          tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+'%'}}
-        }
+  const container=document.getElementById('evo-chart-container');
+  const W=container.offsetWidth||800;
+  const H=340;
+  container.innerHTML='<canvas width="'+W+'" height="'+H+'"></canvas>';
+  const canvas=container.querySelector('canvas');
+  evoChart=new Chart(canvas,{
+    type:'line',
+    data:{labels,datasets},
+    options:{
+      responsive:false,
+      interaction:{mode:'index',intersect:false},
+      scales:{
+        y:{min:0,max:100,title:{display:true,text:'% of population'},
+          ticks:{font:{size:11},color:'#8a847c',callback:v=>v+'%'},
+          grid:{color:'rgba(90,75,55,0.08)'}},
+        x:{ticks:{font:{size:11},color:'#8a847c',maxTicksLimit:12},
+          grid:{display:false}}
+      },
+      plugins:{
+        legend:{position:'right',labels:{font:{size:11},boxWidth:12,padding:8}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+'%'}}
       }
-    });
-  },0);
+    }
+  });
 
   // Survivors table
   const final=history[gens];
