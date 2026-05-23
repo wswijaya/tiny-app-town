@@ -290,6 +290,10 @@ select.strat-sel:focus{outline:none;border-color:var(--accent2)}
           <label class="p-editor-label">Your description <span style="color:var(--ink4);font-weight:400;text-transform:none;letter-spacing:0"> — describe how this persona thinks and decides</span></label>
           <textarea id="creator-desc" rows="3" placeholder="e.g. Seeks middle ground in all conflicts. Cooperates by default but withdraws trust incrementally when betrayed, never fully defecting but never fully forgiving either." style="width:100%;background:var(--surface2);border:0.5px solid var(--border2);color:var(--ink);font-family:var(--serif);font-style:italic;font-size:.82rem;border-radius:4px;padding:6px 10px;resize:vertical;line-height:1.6"></textarea>
         </div>
+        <div style="margin-bottom:.75rem">
+          <label class="p-editor-label">Base behavior <span style="color:var(--ink4);font-weight:400;text-transform:none;letter-spacing:0"> — algorithmic strategy used in Match, Tournament &amp; Evolution</span></label>
+          <select id="creator-base" style="width:100%;background:var(--surface2);border:0.5px solid var(--border2);color:var(--ink);font-family:var(--sans);font-size:.82rem;border-radius:4px;padding:6px 10px"></select>
+        </div>
         <div id="creator-optimised-wrap" style="display:none;margin-bottom:.75rem">
           <label class="p-editor-label" style="color:var(--accent2)">Claude-optimised description</label>
           <div id="creator-optimised" style="background:var(--surface2);border:0.5px solid var(--accent2);border-radius:4px;padding:8px 10px;font-family:var(--serif);font-style:italic;font-size:.82rem;color:var(--ink2);line-height:1.6;min-height:2rem;white-space:pre-wrap"></div>
@@ -478,6 +482,9 @@ function populateSelects(){
     sel.value=i===0?0:1;
   });
   updateDesc('A');updateDesc('B');
+  const baseSel=document.getElementById('creator-base');
+  if(baseSel&&baseSel.options.length===0)
+    S.forEach((s,idx)=>{const o=document.createElement('option');o.value=idx;o.textContent=s.name+' — '+s.tag;baseSel.appendChild(o);});
 }
 
 function updateDesc(p){
@@ -789,6 +796,7 @@ function toggleCreator(){
     document.getElementById('creator-name').value='';
     document.getElementById('creator-tag').value='';
     document.getElementById('creator-desc').value='';
+    document.getElementById('creator-base').value='0';
     document.getElementById('creator-optimised-wrap').style.display='none';
     document.getElementById('creator-error').style.display='none';
     optimisedDesc='';
@@ -850,7 +858,8 @@ function addNewPersona(){
   if(!name){errEl.textContent='Please enter a name.';errEl.style.display='block';return;}
   if(!desc){errEl.textContent='Please enter a description.';errEl.style.display='block';return;}
   const id='c'+Date.now();
-  CUSTOM_PERSONAS.push({name,tag:tag||'Custom',desc,custom:true,id,fn:(h)=>{if(h.length===0)return'C';return h.filter(r=>r.them==='C').length/h.length>=0.5?'C':'D';}});
+  const baseIdx=parseInt(document.getElementById('creator-base').value)||0;
+  CUSTOM_PERSONAS.push({name,tag:tag||'Custom',desc,custom:true,id,baseIdx,fn:S[baseIdx].fn});
   toggleCreator();renderPersonas();refreshSelects();refreshDuelSelects();
   setTimeout(()=>{const el=document.getElementById('pcard-custom-'+id);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},120);
 }
@@ -885,9 +894,11 @@ function renderPersonaCard(i){
 function renderCustomPersonaCard(p){
   const card=document.getElementById('pcard-custom-'+p.id);if(!card)return;
   card.className='p-card custom-card';
+  const baseName=S[p.baseIdx!=null?p.baseIdx:0].name;
   card.innerHTML='<button class="edit-btn" onclick="openCustomEditor(\''+p.id+'\')">✎ edit</button>'+
     '<div class="p-name">'+esc(p.name)+'</div>'+
     '<div class="p-tag">'+esc(p.tag)+'</div>'+
+    '<div style="font-size:.68rem;color:var(--ink3);margin:.15rem 0 .35rem;font-family:var(--sans)">Plays as: '+esc(baseName)+'</div>'+
     '<div class="p-desc">'+esc(p.desc)+'</div>'+
     '<button onclick="deleteCustomPersona(\''+p.id+'\')" style="margin-top:.6rem;font-size:.68rem;color:var(--def);background:none;border:none;cursor:pointer;font-family:var(--sans);padding:0">✕ Remove</button>';
 }
