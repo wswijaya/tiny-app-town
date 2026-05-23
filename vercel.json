@@ -3,9 +3,8 @@
   "installCommand": "npm install",
   "buildCommand": null,
   "devCommand": null,
-  "outputDirectory": ".",
+  "outputDirectory": "public",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index" },
-    { "source": "/(.*)", "destination": "/prisoners_dilemma_new.html" }
+    { "source": "/api/(.*)", "destination": "/api/index" }
   ]
 }
