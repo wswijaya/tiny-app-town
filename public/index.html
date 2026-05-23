@@ -1,43 +1,1143 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Prisoner's Dilemma</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#1a1612;--ink2:#4a4540;--ink3:#8a847c;--ink4:#c4bfb8;
+  --surface:#faf8f5;--surface2:#f2efe9;
+  --accent:#5c3d1e;--accent2:#8b5e3c;
+  --coop:#1d6b4a;--coop-bg:#e6f4ed;
+  --def:#8b2f1a;--def-bg:#faeae6;
+  --border:rgba(90,75,55,0.15);--border2:rgba(90,75,55,0.3);
+  --serif:Georgia,serif;--sans:system-ui,sans-serif
+}
+html,body{background:var(--surface);color:var(--ink);font-family:var(--sans);min-height:100vh}
+.app{max-width:900px;margin:0 auto;padding-bottom:4rem}
+.header{text-align:center;padding:2.5rem 1.5rem 1.5rem;border-bottom:0.5px solid var(--border2)}
+.eyebrow{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--ink3);margin-bottom:.6rem}
+.header h1{font-family:var(--serif);font-size:clamp(2rem,5.5vw,3.4rem);font-style:italic;color:var(--accent);font-weight:400;line-height:1.1;margin-bottom:.6rem}
+.tagline{font-family:var(--serif);font-size:.92rem;color:var(--ink3);font-style:italic}
+.tabs{display:flex;justify-content:center;border-bottom:0.5px solid var(--border2)}
+.tab{padding:.8rem 1.4rem;font-size:.78rem;letter-spacing:.04em;color:var(--ink3);cursor:pointer;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--sans);transition:color .15s}
+.tab:hover{color:var(--accent)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.content{padding:0 1.5rem}
+.panel{display:none}.panel.active{display:block}
+.cond-bar{margin:1.25rem 0 1rem;border:0.5px solid var(--border2);background:var(--surface2);border-radius:6px;padding:.65rem 1rem;display:flex;justify-content:space-between;align-items:center}
+.cond-label{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink3);font-weight:500;margin-right:.75rem}
+.cond-vals{font-size:.77rem;color:var(--ink2);font-family:var(--serif);font-style:italic}
+.expand-btn{font-size:.72rem;color:var(--ink3);cursor:pointer;background:none;border:none;font-family:var(--sans)}
+.settings-box{border:0.5px solid var(--border2);background:var(--surface2);border-radius:6px;padding:1rem 1.25rem;margin-bottom:1rem;display:none;grid-template-columns:1fr 1fr;gap:1rem}
+.setting-row label{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink3);display:block;margin-bottom:4px;font-weight:500}
+.setting-row select{width:100%;background:white;border:0.5px solid var(--border2);color:var(--ink);padding:5px 8px;font-size:.8rem;border-radius:4px;font-family:var(--sans)}
+.rval{font-size:.82rem;color:var(--accent);margin-left:6px;font-weight:500}
+.matchup{border:0.5px solid var(--border2);background:white;border-radius:8px;padding:1.75rem 1.5rem;margin-bottom:1.25rem;display:grid;grid-template-columns:1fr auto 1fr;gap:1.5rem;align-items:start}
+.plabel{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink3);text-align:center;margin-bottom:.5rem;font-weight:500}
+.vs-center{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding-top:1.8rem}
+.vs-icon{font-size:1.2rem;color:var(--ink4)}
+.vs-lbl{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink4)}
+select.strat-sel{width:100%;background:white;border:0.5px solid var(--border2);color:var(--ink);padding:9px 10px;font-size:.88rem;border-radius:5px;font-family:var(--sans);cursor:pointer}
+select.strat-sel:focus{outline:none;border-color:var(--accent2)}
+.strat-desc{font-size:.76rem;color:var(--ink3);font-style:italic;margin-top:5px;font-family:var(--serif);min-height:1.6rem}
+.actions{display:flex;justify-content:center;gap:.75rem;margin-bottom:1.25rem}
+.btn-begin{background:var(--accent);color:white;border:none;padding:.75rem 1.75rem;font-size:.83rem;cursor:pointer;font-family:var(--serif);font-style:italic;border-radius:4px}
+.btn-begin:hover{background:var(--accent2)}
+.btn-reset{background:transparent;color:var(--ink3);border:0.5px solid var(--border2);padding:.75rem 1.25rem;font-size:.83rem;cursor:pointer;font-family:var(--serif);font-style:italic;border-radius:4px}
+.btn-reset:hover{color:var(--ink);border-color:var(--accent2)}
+.arena{border:0.5px solid var(--border2);background:white;border-radius:8px;min-height:200px;display:flex;align-items:center;justify-content:center;padding:2rem}
+.arena-empty{font-family:var(--serif);font-style:italic;color:var(--ink3);font-size:.88rem;text-align:center}
+.score-row{display:flex;align-items:center;margin-bottom:1.5rem}
+.score-box{text-align:center;flex:1}
+.score-name{font-size:.78rem;color:var(--ink3);margin-bottom:3px}
+.score-val{font-size:2.6rem;color:var(--accent);font-family:var(--serif);font-weight:400}
+.score-sep{color:var(--ink4);font-size:1rem;padding:0 .75rem}
+.winner-badge{display:inline-block;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:#3b6d11;background:#eaf3de;border:0.5px solid #c0dd97;padding:2px 8px;border-radius:3px;margin-top:3px;font-weight:500}
+.rtable{width:100%;border-collapse:collapse;font-size:.77rem}
+.rtable th{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink3);text-align:center;padding:4px 6px;border-bottom:0.5px solid var(--border2);font-weight:500}
+.rtable td{text-align:center;padding:5px 6px;border-bottom:0.5px solid var(--border);font-size:.75rem}
+.rtable tr:last-child td{border-bottom:none}
+.pill{display:inline-block;padding:2px 7px;border-radius:3px;font-size:.68rem;font-weight:500}
+.pill-c{background:var(--coop-bg);color:var(--coop)}
+.pill-d{background:var(--def-bg);color:var(--def)}
+.oc-cc{color:var(--coop)}.oc-dd{color:var(--def)}.oc-mix{color:var(--accent2)}
+.lesson{font-family:var(--serif);font-style:italic;font-size:.82rem;color:var(--ink2);text-align:center;margin-top:1rem;border-top:0.5px solid var(--border);padding-top:.75rem}
+.tour-btn{width:100%;background:var(--accent);color:white;border:none;padding:.8rem;font-size:.83rem;cursor:pointer;font-family:var(--serif);font-style:italic;border-radius:4px;margin-bottom:1rem}
+.tour-btn:hover{background:var(--accent2)}
+.tour-status{text-align:center;color:var(--ink3);font-style:italic;font-size:.82rem;margin-bottom:.75rem;font-family:var(--serif)}
+.lb-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.lb-table th{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink3);text-align:left;padding:6px 10px;border-bottom:0.5px solid var(--border2);font-weight:500}
+.lb-table th:not(:first-child){text-align:right}
+.lb-table td{padding:7px 10px;border-bottom:0.5px solid var(--border);color:var(--ink)}
+.lb-table td:not(:first-child){text-align:right;color:var(--ink2)}
+.lb-table tr.top-r td{color:var(--accent);font-weight:500}
+.lb-table tr:last-child td{border-bottom:none}
+.rank{color:var(--ink4);font-size:.7rem;margin-right:4px}
+.persona-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.75rem;margin-top:.75rem}
+.p-card{border:0.5px solid var(--border2);background:white;border-radius:6px;padding:.9rem;position:relative;transition:border-color .15s}
+.p-card:hover{border-color:var(--accent2)}
+.p-card .edit-btn{position:absolute;top:.6rem;right:.6rem;font-size:.68rem;color:var(--ink4);background:none;border:none;cursor:pointer;padding:2px 5px;border-radius:3px;font-family:var(--sans);opacity:0;transition:opacity .15s}
+.p-card:hover .edit-btn{opacity:1}
+.p-card .edit-btn:hover{color:var(--accent);background:var(--surface2)}
+.p-editor{border:1.5px solid var(--accent2);background:var(--surface2);border-radius:6px;padding:.9rem}
+.p-editor input,.p-editor textarea{width:100%;background:white;border:0.5px solid var(--border2);color:var(--ink);font-family:var(--sans);font-size:.78rem;border-radius:4px;padding:5px 8px;margin-bottom:6px;display:block}
+.p-editor input:focus,.p-editor textarea:focus{outline:none;border-color:var(--accent2)}
+.p-editor textarea{resize:vertical;min-height:64px;font-family:var(--serif);font-style:italic;line-height:1.5}
+.p-editor-label{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);font-weight:500;margin-bottom:3px;display:block}
+.p-editor-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.p-editor-save{background:var(--accent);color:white;border:none;padding:4px 12px;font-size:.75rem;border-radius:3px;cursor:pointer;font-family:var(--sans)}
+.p-editor-save:hover{background:var(--accent2)}
+.p-editor-cancel{background:none;color:var(--ink3);border:0.5px solid var(--border2);padding:4px 10px;font-size:.75rem;border-radius:3px;cursor:pointer;font-family:var(--sans)}
+.p-editor-cancel:hover{color:var(--ink)}
+.p-editor-reset{background:none;color:var(--ink4);border:none;padding:4px 8px;font-size:.72rem;border-radius:3px;cursor:pointer;font-family:var(--sans);margin-left:auto}
+.p-editor-reset:hover{color:var(--def)}
+.p-edited-badge{display:inline-block;font-size:8px;letter-spacing:.1em;text-transform:uppercase;background:#faeeda;color:#633806;border-radius:2px;padding:1px 5px;margin-left:5px;font-family:var(--sans);font-weight:500;vertical-align:middle}
+.p-name{font-family:var(--serif);font-style:italic;color:var(--accent);font-size:.92rem;margin-bottom:3px}
+.p-tag{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px;font-weight:500}
+.p-desc{font-size:.73rem;color:var(--ink2);line-height:1.5}
+.sec-title{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent2);font-weight:500;margin:1.25rem 0 .5rem}
+.noise-section{margin-top:1.5rem;border:0.5px solid var(--border2);background:white;border-radius:8px;padding:1.25rem 1.5rem}
+.noise-title{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink3);font-weight:500;margin-bottom:1rem}
+.noise-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:3px;margin-bottom:1rem}
+.noise-cell{height:28px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;position:relative}
+.flip-badge{position:absolute;top:-6px;right:-2px;font-size:8px;background:#faeeda;color:#633806;border-radius:2px;padding:0 3px;font-weight:500}
+.noise-legend{display:flex;gap:1rem;font-size:.7rem;color:var(--ink3);flex-wrap:wrap}
+.nl-item{display:flex;align-items:center;gap:5px}
+.nl-dot{width:10px;height:10px;border-radius:2px}
+.noise-stat{font-size:.75rem;color:var(--ink2);margin-top:.75rem}
+.noise-stat span{font-weight:500;color:var(--accent)}
+.commentary-wrap{margin-top:1.25rem}
+.btn-analyse{background:white;color:var(--accent);border:0.5px solid var(--accent2);padding:.6rem 1.4rem;font-size:.8rem;cursor:pointer;font-family:var(--serif);font-style:italic;border-radius:4px;display:block;margin:1rem auto 0}
+.btn-analyse:hover{background:var(--surface2)}
+.btn-analyse:disabled{opacity:.45;cursor:not-allowed}
+.commentary-box{margin-top:1rem;border:0.5px solid var(--border2);border-radius:8px;overflow:hidden}
+.commentary-header{display:flex;align-items:center;justify-content:space-between;padding:.65rem 1rem;background:var(--surface2);border-bottom:0.5px solid var(--border)}
+.commentary-label{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent2);font-weight:500;display:flex;align-items:center;gap:6px}
+.c-dot{width:6px;height:6px;border-radius:50%;background:var(--accent2)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.c-dot.pulsing{animation:pulse 1.2s ease-in-out infinite}
+.commentary-body{padding:1.1rem 1.25rem;background:white;font-family:var(--serif);font-size:.83rem;color:var(--ink2);line-height:1.85;font-style:italic;white-space:pre-wrap}
+.close-btn{background:none;border:none;color:var(--ink4);cursor:pointer;font-size:.75rem;font-family:var(--sans)}
+.close-btn:hover{color:var(--ink)}
+.duel-scoreboard{display:flex;align-items:center;margin-bottom:1.25rem}
+.duel-round-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:.75rem}
+.duel-player-card{border:0.5px solid var(--border2);border-radius:6px;padding:.9rem;background:var(--surface2)}
+.duel-player-card.thinking{border-color:var(--accent2);background:#fffdf8}
+.duel-player-name{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink3);font-weight:500;margin-bottom:.4rem}
+.duel-move{font-family:var(--serif);font-style:italic;font-size:.9rem;margin:.4rem 0;min-height:1.4rem}
+.duel-move.pending{color:var(--ink4)}
+.duel-reasoning-toggle{font-size:.68rem;color:var(--ink3);background:none;border:none;cursor:pointer;font-family:var(--sans);padding:0;text-decoration:underline;text-underline-offset:2px}
+.duel-reasoning-toggle:hover{color:var(--ink)}
+.duel-reasoning{font-size:.73rem;color:var(--ink2);font-family:var(--serif);font-style:italic;line-height:1.6;margin-top:.5rem;border-top:0.5px solid var(--border);padding-top:.5rem;display:none}
+.duel-round-header{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink3);font-weight:500;margin:.75rem 0 .5rem;display:flex;align-items:center;gap:.75rem}
+.duel-round-header::before,.duel-round-header::after{content:'';flex:1;height:0.5px;background:var(--border)}
+.duel-outcome-bar{text-align:center;font-family:var(--serif);font-style:italic;font-size:.78rem;color:var(--ink2);margin:.5rem 0 .25rem}
+.duel-pts{font-size:.7rem;color:var(--ink3);text-align:center;margin-bottom:1rem}
+.duel-thinking-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent2);margin-left:4px;animation:pulse 1s ease-in-out infinite}
+.duel-final{margin-top:1rem;padding-top:1rem;border-top:0.5px solid var(--border2);text-align:center}
+.duel-final .score-val{font-size:2.2rem;color:var(--accent);font-family:var(--serif)}
+.duel-aborted{text-align:center;color:var(--ink3);font-style:italic;font-size:.85rem;font-family:var(--serif);padding:1rem 0}
+.p-card.custom-card{border-color:var(--accent2)}
+.p-card.custom-card .p-tag::after{content:' · custom';color:var(--accent2)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="eyebrow">An experiment in machine cooperation</div>
+    <h1>The Prisoner's Dilemma</h1>
+    <div class="tagline">Two minds. Ten rounds. One question — to trust or to betray?</div>
+  </div>
 
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <title>React App</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('match')">⚔ The Match</button>
+    <button class="tab" onclick="showTab('tournament')">⬡ Tournament</button>
+    <button class="tab" onclick="showTab('leaderboard')">🏆 Leaderboard</button>
+    <button class="tab" onclick="showTab('personas')">◈ Personas</button>
+    <button class="tab" onclick="showTab('duel')">✦ AI Duel</button>
+  </div>
 
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
+  <div class="content">
 
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
-  </body>
+    <!-- MATCH -->
+    <div id="panel-match" class="panel active">
+      <div class="cond-bar">
+        <span>
+          <span class="cond-label">Conditions</span>
+          <span class="cond-vals" id="cond-text">10 rounds · Classic payoffs · No noise · With lessons</span>
+        </span>
+        <button class="expand-btn" onclick="toggleSettings()">▾ expand</button>
+      </div>
+      <div id="settings-panel" class="settings-box">
+        <div class="setting-row">
+          <label>Rounds <span class="rval" id="rounds-display">10</span></label>
+          <input type="range" min="3" max="30" value="10" step="1" id="rounds-slider" oninput="updateRounds(this.value)" style="width:100%">
+        </div>
+        <div class="setting-row">
+          <label>Payoff matrix</label>
+          <select id="payoff-select" onchange="updateCond()">
+            <option value="classic">Classic (R=3, T=5, S=0, P=1)</option>
+            <option value="harsh">Harsh (R=3, T=5, S=0, P=0)</option>
+            <option value="generous">Generous (R=4, T=5, S=2, P=1)</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label>Noise level</label>
+          <select id="noise-select" onchange="updateCond()">
+            <option value="none">No noise</option>
+            <option value="low">Low (5%)</option>
+            <option value="medium">Medium (15%)</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label>Show lessons</label>
+          <select id="lessons-select" onchange="updateCond()">
+            <option value="yes">With lessons</option>
+            <option value="no">Without</option>
+          </select>
+        </div>
+      </div>
+      <div class="matchup">
+        <div>
+          <div class="plabel">Player A</div>
+          <select class="strat-sel" id="selectA" onchange="updateDesc('A')"></select>
+          <div class="strat-desc" id="descA"></div>
+        </div>
+        <div class="vs-center">
+          <span class="vs-icon">⚔</span>
+          <div class="vs-lbl">vs</div>
+        </div>
+        <div>
+          <div class="plabel">Player B</div>
+          <select class="strat-sel" id="selectB" onchange="updateDesc('B')"></select>
+          <div class="strat-desc" id="descB"></div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn-begin" onclick="runMatch()">▶ Begin the match</button>
+        <button class="btn-reset" onclick="resetMatch()">↺ Reset</button>
+      </div>
+      <div class="arena" id="arena">
+        <div class="arena-empty">The interrogation room is empty. Press Begin the Match to summon the players.</div>
+      </div>
+    </div>
+
+    <!-- TOURNAMENT -->
+    <div id="panel-tournament" class="panel">
+      <div style="margin:1.25rem 0 1rem;border:0.5px solid var(--border2);background:white;border-radius:8px;padding:1rem 1.25rem">
+        <p style="font-style:italic;color:var(--ink3);font-size:.82rem;margin-bottom:.75rem;font-family:var(--serif)">Every strategy plays every other in a round-robin. Scores accumulate across all matches.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="setting-row">
+            <label>Rounds per match</label>
+            <select id="tour-rounds" style="width:100%;background:white;border:0.5px solid var(--border2);color:var(--ink);padding:5px 8px;font-size:.8rem;border-radius:4px;font-family:var(--sans)">
+              <option value="5">5 rounds</option>
+              <option value="10" selected>10 rounds</option>
+              <option value="20">20 rounds</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label>Strategy pool</label>
+            <select id="tour-pool" style="width:100%;background:white;border:0.5px solid var(--border2);color:var(--ink);padding:5px 8px;font-size:.8rem;border-radius:4px;font-family:var(--sans)">
+              <option value="all">All 40 strategies</option>
+              <option value="classic">Classic 8</option>
+              <option value="top">Top tier 6</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <button class="tour-btn" onclick="runTournament()">▶ Run tournament</button>
+      <div class="tour-status" id="tour-status" style="display:none"></div>
+      <div id="tour-results"></div>
+    </div>
+
+    <!-- LEADERBOARD -->
+    <div id="panel-leaderboard" class="panel">
+      <div style="margin:1.25rem 0 .5rem;font-style:italic;color:var(--ink3);font-size:.8rem;font-family:var(--serif)">Rankings from the last completed tournament. Run a tournament to populate.</div>
+      <div id="lb-content">
+        <div style="text-align:center;padding:3rem;color:var(--ink4);font-style:italic;font-size:.85rem;font-family:var(--serif)">No tournament data yet. Run a tournament first.</div>
+      </div>
+    </div>
+
+    <!-- PERSONAS -->
+    <div id="panel-personas" class="panel">
+      <div style="margin:1.25rem 0 .5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+        <span style="font-style:italic;color:var(--ink3);font-size:.8rem;font-family:var(--serif)">Forty strategies. Hover any card to edit its name, tag, or description.</span>
+        <div style="display:flex;gap:.5rem">
+          <button onclick="toggleCreator()" id="creator-toggle-btn" style="font-size:.72rem;color:var(--accent);background:none;border:0.5px solid var(--accent2);padding:3px 10px;border-radius:3px;cursor:pointer;font-family:var(--sans)">+ New persona</button>
+          <button onclick="resetAllPersonas()" style="font-size:.72rem;color:var(--ink4);background:none;border:0.5px solid var(--border2);padding:3px 10px;border-radius:3px;cursor:pointer;font-family:var(--sans)">↺ Reset all</button>
+        </div>
+      </div>
+
+      <!-- CREATOR PANEL -->
+      <div id="persona-creator" style="display:none;border:1.5px solid var(--accent2);background:white;border-radius:8px;padding:1.25rem 1.5rem;margin-bottom:1.25rem">
+        <div style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent2);font-weight:500;margin-bottom:1rem">Create new persona</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+          <div>
+            <label class="p-editor-label">Name</label>
+            <input id="creator-name" placeholder="e.g. The Diplomat" maxlength="60" style="width:100%;background:var(--surface2);border:0.5px solid var(--border2);color:var(--ink);font-family:var(--sans);font-size:.82rem;border-radius:4px;padding:6px 10px">
+          </div>
+          <div>
+            <label class="p-editor-label">Tag / archetype</label>
+            <input id="creator-tag" placeholder="e.g. Calculated Grace" maxlength="40" style="width:100%;background:var(--surface2);border:0.5px solid var(--border2);color:var(--ink);font-family:var(--sans);font-size:.82rem;border-radius:4px;padding:6px 10px">
+          </div>
+        </div>
+        <div style="margin-bottom:.75rem">
+          <label class="p-editor-label">Your description <span style="color:var(--ink4);font-weight:400;text-transform:none;letter-spacing:0"> — describe how this persona thinks and decides</span></label>
+          <textarea id="creator-desc" rows="3" placeholder="e.g. Seeks middle ground in all conflicts. Cooperates by default but withdraws trust incrementally when betrayed, never fully defecting but never fully forgiving either." style="width:100%;background:var(--surface2);border:0.5px solid var(--border2);color:var(--ink);font-family:var(--serif);font-style:italic;font-size:.82rem;border-radius:4px;padding:6px 10px;resize:vertical;line-height:1.6"></textarea>
+        </div>
+        <div id="creator-optimised-wrap" style="display:none;margin-bottom:.75rem">
+          <label class="p-editor-label" style="color:var(--accent2)">Claude-optimised description</label>
+          <div id="creator-optimised" style="background:var(--surface2);border:0.5px solid var(--accent2);border-radius:4px;padding:8px 10px;font-family:var(--serif);font-style:italic;font-size:.82rem;color:var(--ink2);line-height:1.6;min-height:2rem;white-space:pre-wrap"></div>
+          <div style="margin-top:.4rem;display:flex;gap:.5rem;align-items:center">
+            <button class="p-editor-save" onclick="acceptOptimised()" style="font-size:.72rem">✓ Use this</button>
+            <button class="p-editor-cancel" onclick="rejectOptimised()" style="font-size:.72rem">Keep mine</button>
+            <button onclick="optimiseDescription()" id="creator-reopt-btn" style="background:none;border:none;font-size:.72rem;color:var(--ink3);cursor:pointer;font-family:var(--sans);text-decoration:underline;text-underline-offset:2px">↺ Regenerate</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center">
+          <button class="btn-begin" style="padding:.55rem 1.2rem;font-size:.78rem" onclick="addNewPersona()">+ Add persona</button>
+          <button onclick="optimiseDescription()" id="creator-opt-btn" class="btn-analyse" style="margin:0;padding:.55rem 1.2rem;font-size:.78rem">✦ Optimise with Claude</button>
+          <button class="btn-reset" style="padding:.55rem 1rem;font-size:.78rem" onclick="toggleCreator()">Cancel</button>
+        </div>
+        <div id="creator-error" style="display:none;font-size:.75rem;color:var(--def);margin-top:.5rem;font-family:var(--sans)"></div>
+      </div>
+
+      <div id="persona-list"></div>
+    </div>
+
+    <!-- AI DUEL -->
+    <div id="panel-duel" class="panel">
+      <div style="margin:1.25rem 0 1rem;border:0.5px solid var(--border2);background:white;border-radius:8px;padding:1.25rem 1.5rem">
+        <p style="font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink2);margin-bottom:1rem;line-height:1.7">Two Claude agents, each embodying a persona, reason through every round and decide whether to cooperate or defect. Their decisions emerge from genuine reflection — not fixed algorithms.</p>
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:1.5rem;align-items:start">
+          <div>
+            <div class="plabel">Agent A</div>
+            <select class="strat-sel" id="duel-selectA" style="margin-bottom:.5rem"></select>
+            <div class="strat-desc" id="duel-descA"></div>
+          </div>
+          <div class="vs-center" style="padding-top:1.8rem">
+            <span class="vs-icon">✦</span>
+            <div class="vs-lbl">vs</div>
+          </div>
+          <div>
+            <div class="plabel">Agent B</div>
+            <select class="strat-sel" id="duel-selectB" style="margin-bottom:.5rem"></select>
+            <div class="strat-desc" id="duel-descB"></div>
+          </div>
+        </div>
+        <div style="margin-top:1rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="setting-row">
+            <label>Rounds</label>
+            <select id="duel-rounds" style="width:100%;background:white;border:0.5px solid var(--border2);color:var(--ink);padding:5px 8px;font-size:.8rem;border-radius:4px;font-family:var(--sans)">
+              <option value="5">5 rounds</option>
+              <option value="8" selected>8 rounds</option>
+              <option value="10">10 rounds</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label>Payoff matrix</label>
+            <select id="duel-payoff" style="width:100%;background:white;border:0.5px solid var(--border2);color:var(--ink);padding:5px 8px;font-size:.8rem;border-radius:4px;font-family:var(--sans)">
+              <option value="classic">Classic (R=3, T=5, S=0, P=1)</option>
+              <option value="harsh">Harsh (R=3, T=5, S=0, P=0)</option>
+              <option value="generous">Generous (R=4, T=5, S=2, P=1)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn-begin" id="duel-start-btn" onclick="startDuel()">✦ Begin the duel</button>
+        <button class="btn-reset" onclick="resetDuel()">↺ Reset</button>
+      </div>
+      <div id="duel-arena" style="border:0.5px solid var(--border2);background:white;border-radius:8px;min-height:200px;display:flex;align-items:center;justify-content:center;padding:2rem">
+        <div class="arena-empty">The duel chamber is silent. Choose two personas and begin.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" integrity="sha384-mD3vHxZg3bQaahBVNifzPbEkpEEHBSHrXTpEgH+6s8A9FKoXuIFIHEMVfQdMbvwM" crossorigin="anonymous"></script>
+<script>
+const S = [
+  {name:"Tit-for-Tat",tag:"Reciprocator",desc:"Starts cooperative. Mirrors the opponent's last move exactly.",fn:(h)=>h.length===0?'C':h[h.length-1].them},
+  {name:"Grudger",tag:"Unforgiving",desc:"Cooperates until betrayed once, then defects forever.",fn:(h)=>h.some(r=>r.them==='D')?'D':'C'},
+  {name:"Always Cooperate",tag:"Pacifist",desc:"Never defects, no matter what.",fn:()=>'C'},
+  {name:"Always Defect",tag:"Predator",desc:"Never cooperates. Exploits any generosity without mercy.",fn:()=>'D'},
+  {name:"Random",tag:"Chaotic",desc:"Flips a coin each round. Unpredictable by design.",fn:()=>Math.random()<.5?'C':'D'},
+  {name:"Tit-for-Two-Tats",tag:"Forgiving",desc:"Only defects after the opponent defects twice in a row.",fn:(h)=>h.length>=2&&h[h.length-1].them==='D'&&h[h.length-2].them==='D'?'D':'C'},
+  {name:"Two-Tits-for-Tat",tag:"Punisher",desc:"Punishes each defection with two retaliatory defections.",fn:(h,s)=>{if(!s.p)s.p=0;if(h.length>0&&h[h.length-1].them==='D')s.p=2;if(s.p>0){s.p--;return'D';}return'C';}},
+  {name:"Pavlov",tag:"Win-Stay",desc:"Repeats last move if scored well; switches if it didn't.",fn:(h,s,pay)=>{if(h.length===0)return'C';const l=h[h.length-1];return pay[l.me+l.them]>=3?l.me:l.me==='C'?'D':'C';}},
+  {name:"Suspicious TfT",tag:"Cautious",desc:"Like Tit-for-Tat, but opens with defection.",fn:(h)=>h.length===0?'D':h[h.length-1].them},
+  {name:"Generous TfT",tag:"Magnanimous",desc:"Tit-for-Tat but forgives defections 33% of the time.",fn:(h)=>{if(h.length===0)return'C';if(h[h.length-1].them==='D')return Math.random()<.33?'C':'D';return'C';}},
+  {name:"Gradual",tag:"Escalator",desc:"Punishes with increasing severity, then calms with cooperations.",fn:(h,s)=>{if(!s.dc)s.dc=0;if(!s.calm)s.calm=0;if(!s.pu)s.pu=0;if(s.calm>0){s.calm--;return'C';}if(s.pu>0){s.pu--;return'D';}if(h.length>0&&h[h.length-1].them==='D'){s.dc++;s.pu=s.dc-1;s.calm=2;return'D';}return'C';}},
+  {name:"Firm but Fair",tag:"Principled",desc:"Cooperates unless exploited, then defects until even.",fn:(h)=>{if(h.length===0)return'C';const dc=h.filter(r=>r.them==='D'&&r.me==='C').length;const cd=h.filter(r=>r.them==='C'&&r.me==='D').length;return dc>cd?'D':'C';}},
+  {name:"Prober",tag:"Opportunist",desc:"Probes with defection early; if unpunished, exploits. Else TfT.",fn:(h,s)=>{if(!s.probed)s.probed=false;if(!s.ex)s.ex=false;if(h.length<3)return h.length===1?'D':'C';if(!s.probed){s.probed=true;s.ex=!h.slice(1).some(r=>r.them==='D');}if(s.ex)return'D';return h[h.length-1].them;}},
+  {name:"Joss",tag:"Saboteur",desc:"Tit-for-Tat, but defects randomly 10% of the time.",fn:(h)=>{if(h.length===0)return'C';if(h[h.length-1].them==='D')return'D';return Math.random()<.1?'D':'C';}},
+  {name:"Naive Peacemaker",tag:"Optimist",desc:"Tit-for-Tat, but randomly cooperates after defecting.",fn:(h)=>{if(h.length===0)return'C';if(h[h.length-1].them==='D')return Math.random()<.5?'C':'D';return'C';}},
+  {name:"Adaptive",tag:"Learning",desc:"Tracks cooperation rate and defects when betrayal exceeds 50%.",fn:(h)=>{if(h.length<3)return'C';return h.filter(r=>r.them==='C').length/h.length>=.5?'C':'D';}},
+  {name:"Grudger-2",tag:"Twice-Shy",desc:"Forgives one defection; permanently defects after the second.",fn:(h,s)=>{if(!s.st)s.st=0;if(h.length>0&&h[h.length-1].them==='D')s.st++;return s.st>=2?'D':'C';}},
+  {name:"Contrarian",tag:"Rebel",desc:"Does the opposite of what Tit-for-Tat would do.",fn:(h)=>(h.length===0?'C':h[h.length-1].them)==='C'?'D':'C'},
+  {name:"Bully",tag:"Intimidator",desc:"Defects until opponent defects back, then cooperates.",fn:(h)=>h.length>0&&h[h.length-1].them==='D'?'C':'D'},
+  {name:"Champion",tag:"Strategist",desc:"Cooperates, probes at round 3, then mirrors with adjustments.",fn:(h)=>{if(h.length<2)return'C';if(h.length===2)return'D';return h.filter(r=>r.them==='C').length/h.length>.6?'C':'D';}},
+  {name:"Hard TfT",tag:"Iron Mirror",desc:"Defects if opponent defected in either of the last 2 rounds.",fn:(h)=>h.length>=1&&(h[h.length-1].them==='D'||(h.length>=2&&h[h.length-2].them==='D'))?'D':'C'},
+  {name:"Soft Grudger",tag:"Almost Unforgiving",desc:"Grudger that allows exactly one forgiveness over the game.",fn:(h,s)=>{if(!s.fg)s.fg=false;if(!s.bt)s.bt=false;if(h.length>0&&h[h.length-1].them==='D'){if(!s.fg){s.fg=true;return'C';}s.bt=true;}return s.bt?'D':'C';}},
+  {name:"Ripoff",tag:"Exploiter",desc:"Cooperates for 3 rounds then defects forever.",fn:(h)=>h.length<3?'C':'D'},
+  {name:"Resentful",tag:"Scorned",desc:"Defects for rounds equal to total defections received.",fn:(h,s)=>{if(!s.ag)s.ag=0;if(h.length>0&&h[h.length-1].them==='D')s.ag+=2;if(s.ag>0){s.ag--;return'D';}return'C';}},
+  {name:"Calculator",tag:"Utilitarian",desc:"Defects when expected gain from defection exceeds cooperation.",fn:(h)=>{if(h.length<5)return'C';const cr=h.filter(r=>r.them==='C').length/h.length;return(5*cr+(1-cr))>(3*cr)?'D':'C';}},
+  {name:"Penitent",tag:"Remorseful",desc:"Cooperates after each of its own defections.",fn:(h)=>{if(h.length===0)return'C';if(h[h.length-1].me==='D')return'C';return h[h.length-1].them;}},
+  {name:"Detective",tag:"Pattern Seeker",desc:"Plays C D C C then exploits if unpunished, else plays TfT.",fn:(h,s)=>{const p=['C','D','C','C'];if(h.length<4)return p[h.length];if(s.ex2===undefined)s.ex2=!h.slice(1,3).some(r=>r.them==='D');return s.ex2?'D':h[h.length-1].them;}},
+  {name:"Mem2",tag:"Deep Mirror",desc:"Mirrors the majority move opponent made in last 3 rounds.",fn:(h)=>{if(h.length<2)return'C';const w=h.slice(-3);return w.filter(r=>r.them==='D').length>w.length/2?'D':'C';}},
+  {name:"Punisher",tag:"Retaliator",desc:"Defects for 3 rounds after each betrayal.",fn:(h,s)=>{if(!s.p)s.p=0;if(h.length>0&&h[h.length-1].them==='D')s.p=3;if(s.p>0){s.p--;return'D';}return'C';}},
+  {name:"Cooperator Prober",tag:"Trust Tester",desc:"Cooperates then tests trust at round 5. Exploits if unpunished.",fn:(h,s)=>{if(h.length===4){s.ex3=!h.some(r=>r.them==='D');return'D';}if(h.length>4)return s.ex3?'D':h[h.length-1].them==='D'?'D':'C';return'C';}},
+  {name:"Equalizer",tag:"Balancer",desc:"Defects when falling behind on points.",fn:(h,s,pay)=>{if(!s.ms)s.ms=0;if(!s.ts)s.ts=0;if(h.length>0){const l=h[h.length-1];s.ms+=pay[l.me+l.them];s.ts+=pay[l.them+l.me];}return s.ms<s.ts?'D':'C';}},
+  {name:"Alternator",tag:"Rhythmic",desc:"Alternates between cooperation and defection every round.",fn:(h)=>h.length%2===0?'C':'D'},
+  {name:"Confucian",tag:"Relational Virtue",desc:"Cooperates to preserve harmony. Delivers one firm correction when disrespected, then returns to goodwill.",fn:(h,s)=>{if(!s.corrected)s.corrected=false;if(h.length>0&&h[h.length-1].them==='D'&&!s.corrected){s.corrected=true;return'D';}s.corrected=false;return'C';}},
+  {name:"Stoic",tag:"Principled Indifference",desc:"Outcomes are irrelevant. Acts on duty alone: always cooperate. The opponent's choices cannot disturb what is within one's own will.",fn:()=>'C'},
+  {name:"Machiavellian",tag:"Calculated Power",desc:"Cooperates only when it confers strategic advantage. Defects whenever expected returns tip in favour of betrayal.",fn:(h,s,pay)=>{if(h.length<3)return'C';const cs=h.filter(r=>r.me==='C'&&r.them==='C').length*pay.CC+h.filter(r=>r.me==='C'&&r.them==='D').length*pay.CD;const ds=h.filter(r=>r.me==='D'&&r.them==='C').length*pay.DC+h.filter(r=>r.me==='D'&&r.them==='D').length*pay.DD;return ds>cs?'D':'C';}},
+  {name:"Kantian",tag:"Categorical Imperative",desc:"What if everyone defected? Ruin for all. The maxim cannot be universalised — therefore, always cooperate, unconditionally.",fn:()=>'C'},
+  {name:"Sun Tzu",tag:"Deceptive Mastery",desc:"'All warfare is based on deception.' Cooperates early to build false trust, then strikes when least expected. Feigns remorse to reset the opponent's guard. Against aggression, waits for the precise moment of advantage.",fn:(h,s)=>{if(!s.phase)s.phase='build';if(!s.streak)s.streak=0;if(!s.struck)s.struck=false;if(h.length===0)return'C';const last=h[h.length-1];if(s.struck){s.struck=false;s.phase='reset';s.streak=0;return'C';}if(s.phase==='reset'){if(last.them==='D')return'C';s.phase='build';}const aggr=h.length>=4&&h.slice(-4).filter(r=>r.them==='C').length<=1;if(aggr)return h.length%3===0?'D':'C';if(last.them==='C')s.streak++;else s.streak=0;if(s.streak>=3&&Math.random()<.7){s.struck=true;s.streak=0;return'D';}return'C';}},
+  {name:"The Long General",tag:"Positional Dominance",desc:"Absorbs early losses to establish superiority. Cooperates for 4 rounds, defects twice to assert control, then resets — the long game demands patience.",fn:(h)=>h.length%6>=4?'D':'C'},
+  {name:"Patient Hawk",tag:"Asymmetric Striker",desc:"Waits for the opponent to cooperate three times in a row — a signal of exploitable trust — then defects precisely once before resetting.",fn:(h,s)=>{if(!s.streak)s.streak=0;if(!s.strike)s.strike=false;if(s.strike){s.strike=false;s.streak=0;return'D';}if(h.length>0&&h[h.length-1].them==='C'){s.streak++;if(s.streak>=3)s.strike=true;}else s.streak=0;return'C';}},
+  {name:"Deceptive Ally",tag:"Terminal Betrayer",desc:"Cooperates faithfully every round to build deep trust. Defects only on the very last round for maximum harvest. Loyalty is the long con.",fn:(h,s,pay,totalR)=>{if(totalR&&h.length>=totalR-1)return'D';return'C';}},
+];
+
+const PAYOFFS = {classic:{CC:3,CD:0,DC:5,DD:1},harsh:{CC:3,CD:0,DC:5,DD:0},generous:{CC:4,CD:2,DC:5,DD:1}};
+const CATS = {
+  'Cooperative':['Pacifist','Reciprocator','Forgiving','Magnanimous','Principled','Win-Stay','Remorseful'],
+  'Adaptive':['Escalator','Learning','Strategist','Deep Mirror','Balancer','Pattern Seeker','Utilitarian','Trust Tester'],
+  'Retaliatory':['Unforgiving','Punisher','Iron Mirror','Scorned','Twice-Shy','Retaliator','Almost Unforgiving'],
+  'Exploitative':['Predator','Opportunist','Saboteur','Exploiter','Ripoff','Cooperator Prober'],
+  'Chaotic':['Chaotic','Rebel','Intimidator','Rhythmic','Cautious','Optimist'],
+  'Cultural & Strategic':['Relational Virtue','Principled Indifference','Calculated Power','Categorical Imperative','Deceptive Mastery','Positional Dominance','Asymmetric Striker','Terminal Betrayer'],
+};
+
+const OV = {};
+let settingsOpen = false;
+let lastTournament = null;
+let noiseChart = null;
+let lastMatch = null;
+
+function getPay(){const s=document.getElementById('payoff-select');return s?PAYOFFS[s.value]:PAYOFFS.classic;}
+function getRounds(){const s=document.getElementById('rounds-slider');return s?parseInt(s.value):10;}
+function getNoise(){const v=document.getElementById('noise-select').value;return v==='none'?0:v==='low'?.05:.15;}
+
+function disp(i){const ov=OV[i]||{};return{name:ov.name||S[i].name,tag:ov.tag||S[i].tag,desc:ov.desc||S[i].desc,edited:!!OV[i]};}
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function populateSelects(){
+  ['selectA','selectB'].forEach((id,i)=>{
+    const sel=document.getElementById(id);
+    S.forEach((s,idx)=>{const o=document.createElement('option');o.value=idx;o.textContent=s.name;sel.appendChild(o);});
+    sel.value=i===0?0:1;
+  });
+  updateDesc('A');updateDesc('B');
+}
+
+function updateDesc(p){
+  const sel=document.getElementById('select'+p);
+  const idx=parseInt(sel.value);
+  const d=disp(idx);
+  document.getElementById('desc'+p).textContent='You are '+d.name+'. '+d.desc;
+}
+
+function refreshSelects(){
+  ['selectA','selectB'].forEach(id=>{
+    const sel=document.getElementById(id);
+    const cur=sel.value;
+    Array.from(sel.options).forEach(o=>{o.textContent=disp(parseInt(o.value)).name;});
+    sel.value=cur;
+  });
+  updateDesc('A');updateDesc('B');
+}
+
+function toggleSettings(){
+  settingsOpen=!settingsOpen;
+  document.getElementById('settings-panel').style.display=settingsOpen?'grid':'none';
+}
+
+function updateRounds(v){document.getElementById('rounds-display').textContent=v;updateCond();}
+
+function updateCond(){
+  const r=document.getElementById('rounds-slider').value;
+  const pEl=document.getElementById('payoff-select');
+  const pLabel=pEl.options[pEl.selectedIndex].text.split(' ')[0];
+  const nv=document.getElementById('noise-select').value;
+  const nLabel=nv==='none'?'No noise':nv==='low'?'Low (5%)':'Medium (15%)';
+  const lv=document.getElementById('lessons-select').value==='yes'?'With lessons':'Without lessons';
+  document.getElementById('cond-text').textContent=r+' rounds · '+pLabel+' payoffs · '+nLabel+' · '+lv;
+}
+
+function playRound(fnA,fnB,hist,sA,sB,pay,noise,totalR){
+  let mA=fnA(hist.map(r=>({me:r.a,them:r.b})),sA,pay,totalR);
+  let mB=fnB(hist.map(r=>({me:r.b,them:r.a})),sB,pay,totalR);
+  const fA=noise>0&&Math.random()<noise;
+  const fB=noise>0&&Math.random()<noise;
+  if(fA)mA=mA==='C'?'D':'C';
+  if(fB)mB=mB==='C'?'D':'C';
+  return{a:mA,b:mB,flipA:fA,flipB:fB};
+}
+
+function simulate(idxA,idxB,rounds,pay,noise){
+  const sA=S[idxA],sB=S[idxB];
+  const stA={},stB={},hist=[];
+  let scoreA=0,scoreB=0;
+  for(let i=0;i<rounds;i++){
+    const r=playRound(sA.fn,sB.fn,hist,stA,stB,pay,noise,rounds);
+    scoreA+=pay[r.a+r.b];scoreB+=pay[r.b+r.a];hist.push(r);
+  }
+  return{hist,scoreA,scoreB};
+}
+
+function getLesson(hist,nA,nB){
+  const cc=hist.filter(r=>r.a==='C'&&r.b==='C').length;
+  const pct=Math.round(cc/hist.length*100);
+  const flips=hist.filter(r=>r.flipA||r.flipB).length;
+  if(pct===100)return nA+' and '+nB+' achieved perfect cooperation — a rare harmony.';
+  if(pct===0)return 'Both defected every round. Mutual suspicion destroyed all value.';
+  if(flips>0)return 'Noise corrupted '+flips+' move'+(flips>1?'s':'')+'. Signals misread; trust frayed not from malice but from interference.';
+  if(pct>60)return 'Cooperation dominated. Trust, even imperfect, proved profitable.';
+  return 'A complex dance of trust and betrayal — neither fully committed to either path.';
+}
+
+function noiseViz(hist,nA,nB){
+  const totalFlips=hist.filter(r=>r.flipA||r.flipB).length;
+  const fA=hist.filter(r=>r.flipA).length,fB=hist.filter(r=>r.flipB).length;
+  const cells=hist.map(r=>{
+    let bg,tc,label;
+    if(r.a==='C'&&r.b==='C'){bg='#e6f4ed';tc='#1d6b4a';label='CC';}
+    else if(r.a==='D'&&r.b==='D'){bg='#faeae6';tc='#8b2f1a';label='DD';}
+    else if(r.a==='C'&&r.b==='D'){bg='#faeeda';tc='#633806';label='CD';}
+    else{bg='#eaf3de';tc='#3b6d11';label='DC';}
+    const flip=(r.flipA||r.flipB)?'<span class="flip-badge">!</span>':'';
+    return '<div class="noise-cell" style="background:'+bg+';color:'+tc+'">'+label+flip+'</div>';
+  }).join('');
+  const coopPct=Math.round(hist.filter(r=>r.a==='C'&&r.b==='C').length/hist.length*100);
+  const defPct=Math.round(hist.filter(r=>r.a==='D'&&r.b==='D').length/hist.length*100);
+  return '<div class="noise-section">'+
+    '<div class="noise-title">Round-by-round signal map</div>'+
+    '<div class="noise-grid">'+cells+'</div>'+
+    '<div class="noise-legend">'+
+      '<div class="nl-item"><div class="nl-dot" style="background:#e6f4ed;border:0.5px solid #1d6b4a"></div><span style="color:var(--coop)">CC — mutual trust</span></div>'+
+      '<div class="nl-item"><div class="nl-dot" style="background:#faeae6;border:0.5px solid #8b2f1a"></div><span style="color:var(--def)">DD — mutual betrayal</span></div>'+
+      '<div class="nl-item"><div class="nl-dot" style="background:#faeeda;border:0.5px solid #633806"></div><span style="color:#633806">CD — A exploited</span></div>'+
+      '<div class="nl-item"><div class="nl-dot" style="background:#eaf3de;border:0.5px solid #3b6d11"></div><span style="color:#3b6d11">DC — B exploited</span></div>'+
+      '<div class="nl-item"><div class="nl-dot" style="background:#faeeda"></div><span style="color:var(--ink3)">! = noise flip</span></div>'+
+    '</div>'+
+    '<div class="noise-stat">Noise flips: <span>'+totalFlips+'</span> total ('+esc(nA)+': <span>'+fA+'</span>, '+esc(nB)+': <span>'+fB+'</span>) · Mutual cooperation: <span>'+coopPct+'%</span> · Mutual defection: <span>'+defPct+'%</span></div>'+
+    '<div style="position:relative;width:100%;height:160px;margin-top:1rem"><canvas id="outcomeChart" role="img" aria-label="Outcome distribution">Outcome distribution.</canvas></div>'+
+  '</div>';
+}
+
+function runMatch(){
+  const idxA=parseInt(document.getElementById('selectA').value);
+  const idxB=parseInt(document.getElementById('selectB').value);
+  const rounds=getRounds(),pay=getPay(),noise=getNoise();
+  const showLesson=document.getElementById('lessons-select').value==='yes';
+  const{hist,scoreA,scoreB}=simulate(idxA,idxB,rounds,pay,noise);
+  const nA=disp(idxA).name,nB=disp(idxB).name;
+  lastMatch={hist,scoreA,scoreB,nA,nB,pay,noise,rounds};
+
+  let cumA=0,cumB=0;
+  const rows=hist.map((r,i)=>{
+    const ptA=pay[r.a+r.b],ptB=pay[r.b+r.a];
+    cumA+=ptA;cumB+=ptB;
+    const oc=r.a==='C'&&r.b==='C'?'oc-cc':r.a==='D'&&r.b==='D'?'oc-dd':'oc-mix';
+    const ocL=r.a==='C'&&r.b==='C'?'Mutual trust':r.a==='D'&&r.b==='D'?'Mutual betrayal':r.a==='C'?'A exploited':'B exploited';
+    const fn=(r.flipA||r.flipB)?' <span style="font-size:.65rem;color:#854f0b;background:#faeeda;padding:1px 4px;border-radius:2px">noise</span>':'';
+    const pcA=ptA===Math.max(pay.CC,pay.DC)?'color:#1d6b4a;font-weight:500':ptA===0?'color:#8b2f1a':'color:var(--ink2)';
+    const pcB=ptB===Math.max(pay.CC,pay.DC)?'color:#1d6b4a;font-weight:500':ptB===0?'color:#8b2f1a':'color:var(--ink2)';
+    const clA=cumA>cumB?'color:var(--accent);font-weight:500':'color:var(--ink3)';
+    const clB=cumB>cumA?'color:var(--accent);font-weight:500':'color:var(--ink3)';
+    const sA=nA.length>12?nA.split(' ')[0]:nA;
+    const sB=nB.length>12?nB.split(' ')[0]:nB;
+    return '<tr>'+
+      '<td style="color:var(--ink4);font-size:.7rem">'+(i+1)+'</td>'+
+      '<td><span class="pill '+(r.a==='C'?'pill-c':'pill-d')+'">'+(r.a==='C'?'C':'D')+'</span></td>'+
+      '<td><span class="pill '+(r.b==='C'?'pill-c':'pill-d')+'">'+(r.b==='C'?'C':'D')+'</span></td>'+
+      '<td class="'+oc+'" style="font-size:.72rem">'+ocL+fn+'</td>'+
+      '<td style="'+pcA+';font-size:.78rem">+'+ptA+'</td>'+
+      '<td style="'+pcB+';font-size:.78rem">+'+ptB+'</td>'+
+      '<td style="font-size:.72rem;'+clA+'">'+cumA+'</td>'+
+      '<td style="font-size:.72rem;'+clB+'">'+cumB+'</td>'+
+    '</tr>';
+  }).join('');
+
+  const sA=nA.length>12?nA.split(' ')[0]:nA;
+  const sB=nB.length>12?nB.split(' ')[0]:nB;
+  const lesson=showLesson?'<div class="lesson">'+getLesson(hist,nA,nB)+'</div>':'';
+
+  const arena=document.getElementById('arena');
+  arena.style.alignItems='flex-start';
+  arena.innerHTML=
+    '<div style="width:100%">'+
+    '<div class="score-row">'+
+      '<div class="score-box"><div class="score-name">'+esc(nA)+'</div><div class="score-val">'+scoreA+'</div>'+(scoreA>scoreB?'<div class="winner-badge">Winner</div>':'')+'</div>'+
+      '<div class="score-sep">·</div>'+
+      '<div class="score-box"><div class="score-name">'+esc(nB)+'</div><div class="score-val">'+scoreB+'</div>'+(scoreB>scoreA?'<div class="winner-badge">Winner</div>':scoreA===scoreB?'<div class="winner-badge">Draw</div>':'')+'</div>'+
+    '</div>'+
+    '<div style="overflow-x:auto">'+
+    '<table class="rtable" style="min-width:480px">'+
+      '<thead><tr><th style="width:28px">#</th><th>'+esc(sA)+'</th><th>'+esc(sB)+'</th><th>Outcome</th><th style="color:var(--accent2)">+pts A</th><th style="color:var(--accent2)">+pts B</th><th style="color:var(--ink3)">Total A</th><th style="color:var(--ink3)">Total B</th></tr></thead>'+
+      '<tbody>'+rows+'</tbody>'+
+    '</table></div>'+
+    lesson+
+    noiseViz(hist,nA,nB)+
+    '<div class="commentary-wrap">'+
+      '<button class="btn-analyse" id="btn-analyse" onclick="analyseMatch()">✦ Analyse this match</button>'+
+      '<div class="commentary-box" id="commentary-box" style="display:none">'+
+        '<div class="commentary-header">'+
+          '<div class="commentary-label"><span class="c-dot" id="c-dot"></span> Claude\'s analysis</div>'+
+          '<button class="close-btn" onclick="document.getElementById(\'commentary-box\').style.display=\'none\'">✕ close</button>'+
+        '</div>'+
+        '<div class="commentary-body" id="commentary-body"></div>'+
+      '</div>'+
+    '</div>'+
+    '</div>';
+
+  if(noiseChart){noiseChart.destroy();noiseChart=null;}
+  setTimeout(()=>{
+    const ctx=document.getElementById('outcomeChart');
+    if(!ctx)return;
+    noiseChart=new Chart(ctx,{
+      type:'bar',
+      data:{
+        labels:['Mutual trust (CC)','Mutual betrayal (DD)','A exploited (CD)','B exploited (DC)'],
+        datasets:[{
+          data:[hist.filter(r=>r.a==='C'&&r.b==='C').length,hist.filter(r=>r.a==='D'&&r.b==='D').length,hist.filter(r=>r.a==='C'&&r.b==='D').length,hist.filter(r=>r.a==='D'&&r.b==='C').length],
+          backgroundColor:['#e6f4ed','#faeae6','#faeeda','#eaf3de'],
+          borderColor:['#1d6b4a','#8b2f1a','#854f0b','#3b6d11'],
+          borderWidth:1
+        }]
+      },
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:11},color:'#8a847c',autoSkip:false,maxRotation:0},grid:{display:false}},y:{ticks:{font:{size:11},color:'#8a847c',stepSize:1},grid:{color:'rgba(90,75,55,0.08)'},beginAtZero:true}}}
+    });
+  },60);
+}
+
+async function analyseMatch(){
+  if(!lastMatch)return;
+  const btn=document.getElementById('btn-analyse');
+  const box=document.getElementById('commentary-box');
+  const body=document.getElementById('commentary-body');
+  const dot=document.getElementById('c-dot');
+  btn.disabled=true;btn.textContent='Analysing…';
+  box.style.display='block';body.textContent='';dot.classList.add('pulsing');
+
+  const{hist,scoreA,scoreB,nA,nB,pay,noise,rounds}=lastMatch;
+  const transcript=hist.map((r,i)=>{
+    const ptA=pay[r.a+r.b],ptB=pay[r.b+r.a];
+    const flip=(r.flipA||r.flipB)?' [noise flip]':'';
+    return 'Round '+(i+1)+': '+nA+' '+(r.a==='C'?'C':'D')+' (+'+ptA+'), '+nB+' '+(r.b==='C'?'C':'D')+' (+'+ptB+')'+flip;
+  }).join('\n');
+
+  const cc=hist.filter(r=>r.a==='C'&&r.b==='C').length;
+  const dd=hist.filter(r=>r.a==='D'&&r.b==='D').length;
+  const flips=hist.filter(r=>r.flipA||r.flipB).length;
+  const payName=pay.CC===4?'Generous':pay.DD===0?'Harsh':'Classic';
+  const noiseLabel=noise===0?'none':noise===.05?'low (5%)':'medium (15%)';
+
+  const prompt=`You are a game theorist and narrative analyst commenting on a Prisoner's Dilemma match. Write a sharp, insightful post-match analysis of 3-4 paragraphs. Be specific — name the exact round where pivotal moments occurred, identify the strategic dynamic at play using game theory terminology, and reflect on what the result reveals about trust and self-interest. Write in an elegant, slightly literary style — precise but not dry. No headers or bullet points — flowing prose only.
+
+Match: ${nA} vs ${nB}
+Rounds: ${rounds} | Payoff: ${payName} (CC=${pay.CC}, DC=${pay.DC}, CD=${pay.CD}, DD=${pay.DD}) | Noise: ${noiseLabel}
+Final score: ${nA} ${scoreA} — ${nB} ${scoreB}
+Mutual cooperation: ${cc}/${rounds} rounds | Mutual defection: ${dd}/${rounds} rounds | Noise flips: ${flips}
+
+Round transcript:
+${transcript}`;
+
+  try{
+    const resp=await fetch('/api/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        stream:true,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    if(!resp.ok){const e=await resp.text();body.textContent='API error: '+resp.status+'. '+e;return;}
+    const reader=resp.body.getReader();
+    const dec=new TextDecoder();
+    let buf='';
+    while(true){
+      const{done,value}=await reader.read();
+      if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n');
+      buf=lines.pop();
+      for(const line of lines){
+        if(!line.startsWith('data:'))continue;
+        const d=line.slice(5).trim();
+        if(d==='[DONE]')break;
+        try{
+          const j=JSON.parse(d);
+          if(j.type==='content_block_delta'&&j.delta&&j.delta.type==='text_delta'){
+            body.textContent+=j.delta.text;
+          }
+        }catch(e){}
+      }
+    }
+  }catch(err){
+    body.textContent='Could not connect to Claude API: '+err.message;
+  }
+  dot.classList.remove('pulsing');
+  btn.disabled=false;btn.textContent='✦ Analyse again';
+}
+
+function resetMatch(){
+  if(noiseChart){noiseChart.destroy();noiseChart=null;}
+  lastMatch=null;
+  const arena=document.getElementById('arena');
+  arena.style.alignItems='center';
+  arena.innerHTML='<div class="arena-empty">The interrogation room is empty. Press Begin the Match to summon the players.</div>';
+}
+
+async function runTournament(){
+  const rounds=parseInt(document.getElementById('tour-rounds').value);
+  const pool=document.getElementById('tour-pool').value;
+  const pay=PAYOFFS.classic;
+  const status=document.getElementById('tour-status');
+  const results=document.getElementById('tour-results');
+  let ps;
+  if(pool==='classic')ps=S.slice(0,8);
+  else if(pool==='top')ps=[S[0],S[1],S[5],S[7],S[11],S[25]];
+  else ps=S;
+  status.style.display='block';status.textContent='Running tournament…';results.innerHTML='';
+  await new Promise(r=>setTimeout(r,20));
+  const scores=ps.map(()=>0),wins=ps.map(()=>0),matches=ps.map(()=>0);
+  for(let i=0;i<ps.length;i++){
+    for(let j=0;j<ps.length;j++){
+      if(i===j)continue;
+      const{scoreA,scoreB}=simulate(S.indexOf(ps[i]),S.indexOf(ps[j]),rounds,pay,0);
+      scores[i]+=scoreA;scores[j]+=scoreB;matches[i]++;matches[j]++;
+      if(scoreA>scoreB)wins[i]++;else if(scoreB>scoreA)wins[j]++;
+    }
+  }
+  const ranked=ps.map((s,i)=>({name:s.name,tag:s.tag,score:scores[i],wins:wins[i],matches:matches[i]})).sort((a,b)=>b.score-a.score);
+  lastTournament=ranked;
+  status.textContent='Tournament complete — '+ps.length+' strategies, '+ps.length*(ps.length-1)+' matches.';
+  const rows=ranked.map((r,i)=>'<tr class="'+(i===0?'top-r':'')+'"><td><span class="rank">#'+(i+1)+'</span>'+esc(r.name)+'</td><td style="font-size:.7rem;color:var(--ink3)">'+esc(r.tag)+'</td><td>'+r.score+'</td><td>'+r.wins+'/'+r.matches+'</td><td>'+(r.score/r.matches).toFixed(1)+'</td></tr>').join('');
+  results.innerHTML='<table class="lb-table" style="margin-top:1rem"><thead><tr><th>Strategy</th><th>Type</th><th>Total score</th><th>Wins</th><th>Avg/match</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  updateLeaderboard(ranked);
+}
+
+function updateLeaderboard(ranked){
+  if(!ranked)return;
+  const rows=ranked.map((r,i)=>'<tr class="'+(i===0?'top-r':'')+'"><td><span class="rank">#'+(i+1)+'</span>'+esc(r.name)+'</td><td style="font-size:.7rem;color:var(--ink3)">'+esc(r.tag)+'</td><td>'+r.score+'</td><td>'+r.wins+'/'+r.matches+'</td><td>'+(r.score/r.matches).toFixed(1)+'</td></tr>').join('');
+  document.getElementById('lb-content').innerHTML='<table class="lb-table"><thead><tr><th>Strategy</th><th>Type</th><th>Total score</th><th>Wins</th><th>Avg/match</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+const CUSTOM_PERSONAS=[];
+let optimisedDesc='';
+
+function toggleCreator(){
+  const panel=document.getElementById('persona-creator');
+  const btn=document.getElementById('creator-toggle-btn');
+  const visible=panel.style.display!=='none';
+  panel.style.display=visible?'none':'block';
+  btn.textContent=visible?'+ New persona':'✕ Close';
+  if(!visible){
+    document.getElementById('creator-name').value='';
+    document.getElementById('creator-tag').value='';
+    document.getElementById('creator-desc').value='';
+    document.getElementById('creator-optimised-wrap').style.display='none';
+    document.getElementById('creator-error').style.display='none';
+    optimisedDesc='';
+  }
+}
+
+async function optimiseDescription(){
+  const name=document.getElementById('creator-name').value.trim();
+  const tag=document.getElementById('creator-tag').value.trim();
+  const desc=document.getElementById('creator-desc').value.trim();
+  const errEl=document.getElementById('creator-error');
+  errEl.style.display='none';
+  if(!desc){errEl.textContent='Please enter a description first.';errEl.style.display='block';return;}
+  const optBtn=document.getElementById('creator-opt-btn');
+  const reoptBtn=document.getElementById('creator-reopt-btn');
+  const wrap=document.getElementById('creator-optimised-wrap');
+  const out=document.getElementById('creator-optimised');
+  optBtn.disabled=true;optBtn.textContent='Optimising…';
+  if(reoptBtn)reoptBtn.disabled=true;
+  wrap.style.display='block';
+  out.textContent='';optimisedDesc='';
+  const prompt='You are helping design a Prisoner\'s Dilemma strategy persona. The user has described a persona called "'+( name||'unnamed')+'" with archetype "'+(tag||'unknown')+'".\n\nTheir description: "'+desc+'"\n\nRewrite this as a sharp, precise persona description for a Prisoner\'s Dilemma player. The description should:\n- Be 2-3 sentences maximum\n- Clearly convey the decision-making philosophy (when to cooperate, when to defect, how they respond to betrayal)\n- Be written in third person, present tense\n- Have a slightly literary, aphoristic quality\n- Not mention "Prisoner\'s Dilemma" explicitly\n\nReturn ONLY the rewritten description. No preamble, no explanation, no quotes.';
+  try{
+    const resp=await fetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,stream:true,messages:[{role:'user',content:prompt}]})});
+    if(!resp.ok)throw new Error('API '+resp.status);
+    const reader=resp.body.getReader();const dec=new TextDecoder();let buf='';
+    while(true){
+      const{done,value}=await reader.read();if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n');buf=lines.pop();
+      for(const line of lines){
+        if(!line.startsWith('data:'))continue;
+        const d=line.slice(5).trim();if(d==='[DONE]')break;
+        try{const j=JSON.parse(d);if(j.type==='content_block_delta'&&j.delta&&j.delta.type==='text_delta'){optimisedDesc+=j.delta.text;out.textContent=optimisedDesc;}}catch(e){}
+      }
+    }
+  }catch(err){errEl.textContent='Could not reach Claude: '+err.message;errEl.style.display='block';wrap.style.display='none';}
+  optBtn.disabled=false;optBtn.textContent='✦ Optimise with Claude';
+  if(reoptBtn)reoptBtn.disabled=false;
+}
+
+function acceptOptimised(){
+  if(optimisedDesc)document.getElementById('creator-desc').value=optimisedDesc;
+  document.getElementById('creator-optimised-wrap').style.display='none';
+  optimisedDesc='';
+}
+
+function rejectOptimised(){
+  document.getElementById('creator-optimised-wrap').style.display='none';
+  optimisedDesc='';
+}
+
+function addNewPersona(){
+  const name=document.getElementById('creator-name').value.trim();
+  const tag=document.getElementById('creator-tag').value.trim();
+  const desc=document.getElementById('creator-desc').value.trim();
+  const errEl=document.getElementById('creator-error');
+  errEl.style.display='none';
+  if(!name){errEl.textContent='Please enter a name.';errEl.style.display='block';return;}
+  if(!desc){errEl.textContent='Please enter a description.';errEl.style.display='block';return;}
+  const id='c'+Date.now();
+  CUSTOM_PERSONAS.push({name,tag:tag||'Custom',desc,custom:true,id,fn:(h)=>{if(h.length===0)return'C';return h.filter(r=>r.them==='C').length/h.length>=0.5?'C':'D';}});
+  toggleCreator();renderPersonas();refreshSelects();refreshDuelSelects();
+  setTimeout(()=>{const el=document.getElementById('pcard-custom-'+id);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},120);
+}
+
+function deleteCustomPersona(id){
+  const idx=CUSTOM_PERSONAS.findIndex(p=>p.id===id);
+  if(idx>-1)CUSTOM_PERSONAS.splice(idx,1);
+  renderPersonas();refreshSelects();refreshDuelSelects();
+}
+
+function refreshDuelSelects(){
+  ['duel-selectA','duel-selectB'].forEach(selId=>{
+    const sel=document.getElementById(selId);if(!sel)return;
+    const cur=sel.value;
+    Array.from(sel.options).filter(o=>String(o.value).startsWith('custom-')).forEach(o=>sel.remove(o.index));
+    CUSTOM_PERSONAS.forEach(p=>{const o=document.createElement('option');o.value='custom-'+p.id;o.textContent=p.name;sel.appendChild(o);});
+    if(Array.from(sel.options).find(o=>o.value===cur))sel.value=cur;
+  });
+}
+
+function renderPersonaCard(i){
+  const d=disp(i);
+  const card=document.getElementById('pcard-'+i);
+  if(!card)return;
+  card.className='p-card';
+  card.innerHTML='<button class="edit-btn" onclick="openEditor('+i+')">✎ edit</button>'+
+    '<div class="p-name">'+esc(d.name)+(d.edited?'<span class="p-edited-badge">edited</span>':'')+'</div>'+
+    '<div class="p-tag">'+esc(d.tag)+'</div>'+
+    '<div class="p-desc">'+esc(d.desc)+'</div>';
+}
+
+function renderCustomPersonaCard(p){
+  const card=document.getElementById('pcard-custom-'+p.id);if(!card)return;
+  card.className='p-card custom-card';
+  card.innerHTML='<button class="edit-btn" onclick="openCustomEditor(\''+p.id+'\')">✎ edit</button>'+
+    '<div class="p-name">'+esc(p.name)+'</div>'+
+    '<div class="p-tag">'+esc(p.tag)+'</div>'+
+    '<div class="p-desc">'+esc(p.desc)+'</div>'+
+    '<button onclick="deleteCustomPersona(\''+p.id+'\')" style="margin-top:.6rem;font-size:.68rem;color:var(--def);background:none;border:none;cursor:pointer;font-family:var(--sans);padding:0">✕ Remove</button>';
+}
+
+function openCustomEditor(id){
+  const p=CUSTOM_PERSONAS.find(p=>p.id===id);if(!p)return;
+  const card=document.getElementById('pcard-custom-'+id);
+  card.innerHTML='<div class="p-editor">'+
+    '<span class="p-editor-label">Name</span>'+
+    '<input id="cpe-name-'+id+'" value="'+esc(p.name)+'" maxlength="60">'+
+    '<span class="p-editor-label">Tag</span>'+
+    '<input id="cpe-tag-'+id+'" value="'+esc(p.tag)+'" maxlength="40">'+
+    '<span class="p-editor-label">Description</span>'+
+    '<textarea id="cpe-desc-'+id+'" rows="3">'+esc(p.desc)+'</textarea>'+
+    '<div class="p-editor-actions">'+
+      '<button class="p-editor-save" onclick="saveCustomPersona(\''+id+'\')">✓ Save</button>'+
+      '<button class="p-editor-cancel" onclick="renderCustomPersonaCard(CUSTOM_PERSONAS.find(p=>p.id===\''+id+'\'))">Cancel</button>'+
+      '<button class="p-editor-reset" onclick="deleteCustomPersona(\''+id+'\')">✕ Remove</button>'+
+    '</div></div>';
+}
+
+function saveCustomPersona(id){
+  const p=CUSTOM_PERSONAS.find(p=>p.id===id);if(!p)return;
+  p.name=(document.getElementById('cpe-name-'+id).value||'').trim()||p.name;
+  p.tag=(document.getElementById('cpe-tag-'+id).value||'').trim()||p.tag;
+  p.desc=(document.getElementById('cpe-desc-'+id).value||'').trim()||p.desc;
+  refreshSelects();refreshDuelSelects();renderCustomPersonaCard(p);
+}
+
+function openEditor(i){
+  const d=disp(i);
+  const card=document.getElementById('pcard-'+i);
+  card.innerHTML='<div class="p-editor">'+
+    '<span class="p-editor-label">Name</span>'+
+    '<input id="pe-name-'+i+'" value="'+esc(d.name)+'" maxlength="60">'+
+    '<span class="p-editor-label">Tag</span>'+
+    '<input id="pe-tag-'+i+'" value="'+esc(d.tag)+'" maxlength="40">'+
+    '<span class="p-editor-label">Description</span>'+
+    '<textarea id="pe-desc-'+i+'" rows="3">'+esc(d.desc)+'</textarea>'+
+    '<div class="p-editor-actions">'+
+      '<button class="p-editor-save" onclick="savePersona('+i+')">✓ Save</button>'+
+      '<button class="p-editor-cancel" onclick="renderPersonaCard('+i+')">Cancel</button>'+
+      '<button class="p-editor-reset" onclick="resetPersona('+i+')">↺ Reset to default</button>'+
+    '</div></div>';
+}
+
+function savePersona(i){
+  const name=(document.getElementById('pe-name-'+i).value||'').trim();
+  const tag=(document.getElementById('pe-tag-'+i).value||'').trim();
+  const desc=(document.getElementById('pe-desc-'+i).value||'').trim();
+  const orig=S[i];
+  if(name===orig.name&&tag===orig.tag&&desc===orig.desc)delete OV[i];
+  else OV[i]={name:name||orig.name,tag:tag||orig.tag,desc:desc||orig.desc};
+  refreshSelects();renderPersonaCard(i);
+}
+
+function resetPersona(i){delete OV[i];refreshSelects();renderPersonaCard(i);}
+
+function resetAllPersonas(){Object.keys(OV).forEach(k=>delete OV[k]);refreshSelects();renderPersonas();}
+
+function renderPersonas(){
+  const list=document.getElementById('persona-list');
+  let html='';
+  for(const[cat,tags]of Object.entries(CATS)){
+    const strats=S.map((s,i)=>({s,i})).filter(({s})=>tags.includes(s.tag));
+    if(!strats.length)continue;
+    html+='<div class="sec-title">'+cat+'</div><div class="persona-grid">';
+    strats.forEach(({i})=>{html+='<div class="p-card" id="pcard-'+i+'"></div>';});
+    html+='</div>';
+  }
+  if(CUSTOM_PERSONAS.length){
+    html+='<div class="sec-title">My personas</div><div class="persona-grid">';
+    CUSTOM_PERSONAS.forEach(p=>{html+='<div class="p-card custom-card" id="pcard-custom-'+p.id+'"></div>';});
+    html+='</div>';
+  }
+  list.innerHTML=html;
+  S.forEach((_,i)=>renderPersonaCard(i));
+  CUSTOM_PERSONAS.forEach(p=>renderCustomPersonaCard(p));
+}
+
+function populateDuelSelects(){
+  ['duel-selectA','duel-selectB'].forEach((id,i)=>{
+    const sel=document.getElementById(id);
+    if(!sel||sel.options.length>0)return;
+    S.forEach((s,idx)=>{const o=document.createElement('option');o.value=idx;o.textContent=s.name;sel.appendChild(o);});
+    CUSTOM_PERSONAS.forEach(p=>{const o=document.createElement('option');o.value='custom-'+p.id;o.textContent=p.name;sel.appendChild(o);});
+    sel.value=i===0?32:36;
+    updateDuelDesc(i===0?'A':'B');
+  });
+}
+
+function getDuelPersona(val){
+  if(String(val).startsWith('custom-')){
+    const id=val.replace('custom-','');
+    return CUSTOM_PERSONAS.find(p=>p.id===id)||S[0];
+  }
+  return disp(parseInt(val));
+}
+
+function updateDuelDesc(p){
+  const sel=document.getElementById('duel-select'+p);
+  const desc=document.getElementById('duel-desc'+p);
+  if(!sel||!desc)return;
+  const d=getDuelPersona(sel.value);
+  desc.textContent=d.desc;
+}
+
+document.addEventListener('change',e=>{
+  if(e.target.id==='duel-selectA')updateDuelDesc('A');
+  if(e.target.id==='duel-selectB')updateDuelDesc('B');
+});
+
+let duelAborted=false;
+
+async function askClaude(personaName,personaDesc,history,myScore,theirScore,round,totalRounds,pay,opponentName){
+  const histText=history.length===0?'No rounds played yet.':history.map((r,i)=>{
+    const myMove=r.a;const theirMove=r.b;
+    const myPts=pay[myMove+theirMove];const theirPts=pay[theirMove+myMove];
+    const outcome=myMove==='C'&&theirMove==='C'?'Mutual cooperation':myMove==='D'&&theirMove==='D'?'Mutual defection':myMove==='C'?'You were exploited':'You exploited them';
+    return 'Round '+(i+1)+': You '+myMove+' (+'+myPts+' pts), '+opponentName+' '+theirMove+' (+'+theirPts+' pts) — '+outcome;
+  }).join('\n');
+
+  const prompt=`You are playing the Prisoner's Dilemma as the "${personaName}" persona.
+
+Your character: ${personaDesc}
+
+Payoff structure: If both cooperate (CC) you each get ${pay.CC} pts. If both defect (DD) you each get ${pay.DD} pts. If you cooperate and they defect (CD) you get ${pay.CD} pts and they get ${pay.DC} pts. If you defect and they cooperate (DC) you get ${pay.DC} pts and they get ${pay.CD} pts.
+
+This is round ${round} of ${totalRounds}.
+Current score — You: ${myScore} | ${opponentName}: ${theirScore}
+
+Match history (your perspective):
+${histText}
+
+Reflect briefly on what has happened so far, what it reveals about your opponent's character, and what your persona's philosophy demands of you in this moment. Then state your decision.
+
+You MUST end your response with exactly one of these two lines:
+DECISION: COOPERATE
+DECISION: DEFECT`;
+
+  const resp=await fetch('/api/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:400,
+      messages:[{role:'user',content:prompt}]
+    })
+  });
+  if(!resp.ok)throw new Error('API '+resp.status);
+  const data=await resp.json();
+  const text=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+  const match=text.match(/DECISION:\s*(COOPERATE|DEFECT)/i);
+  const move=match?(match[1].toUpperCase()==='COOPERATE'?'C':'D'):'C';
+  const reasoning=text.replace(/DECISION:\s*(COOPERATE|DEFECT)/i,'').trim();
+  return{move,reasoning};
+}
+
+async function startDuel(){
+  const valA=document.getElementById('duel-selectA').value;
+  const valB=document.getElementById('duel-selectB').value;
+  const totalRounds=parseInt(document.getElementById('duel-rounds').value);
+  const payKey=document.getElementById('duel-payoff').value;
+  const pay=PAYOFFS[payKey];
+  const dA=getDuelPersona(valA),dB=getDuelPersona(valB);
+  const btn=document.getElementById('duel-start-btn');
+  btn.disabled=true;btn.textContent='Duel in progress…';
+  duelAborted=false;
+
+  const arena=document.getElementById('duel-arena');
+  arena.style.alignItems='flex-start';
+  arena.innerHTML='<div style="width:100%" id="duel-content"></div>';
+
+  let scoreA=0,scoreB=0;
+  const fullHistA=[];
+  const fullHistB=[];
+  const roundEls=[];
+
+  for(let round=1;round<=totalRounds;round++){
+    if(duelAborted)break;
+
+    const roundId='duel-round-'+round;
+    const dc=document.getElementById('duel-content');
+    dc.insertAdjacentHTML('beforeend',
+      '<div class="duel-round-header">Round '+round+'</div>'+
+      '<div class="duel-round-row" id="'+roundId+'">'+
+        '<div class="duel-player-card thinking" id="duel-card-A-'+round+'">'+
+          '<div class="duel-player-name">'+esc(dA.name)+'</div>'+
+          '<div class="duel-move pending">Thinking<span class="duel-thinking-dot"></span></div>'+
+        '</div>'+
+        '<div class="duel-player-card thinking" id="duel-card-B-'+round+'">'+
+          '<div class="duel-player-name">'+esc(dB.name)+'</div>'+
+          '<div class="duel-move pending">Thinking<span class="duel-thinking-dot"></span></div>'+
+        '</div>'+
+      '</div>'
+    );
+    arena.scrollTop=arena.scrollHeight;
+
+    let resA,resB;
+    try{
+      [resA,resB]=await Promise.all([
+        askClaude(dA.name,dA.desc,fullHistA,scoreA,scoreB,round,totalRounds,pay,dB.name),
+        askClaude(dB.name,dB.desc,fullHistB,scoreB,scoreA,round,totalRounds,pay,dA.name)
+      ]);
+    }catch(err){
+      document.getElementById('duel-content').insertAdjacentHTML('beforeend','<div class="duel-aborted">API error: '+esc(err.message)+'</div>');
+      break;
+    }
+    if(duelAborted)break;
+
+    const mA=resA.move,mB=resB.move;
+    const ptA=pay[mA+mB],ptB=pay[mB+mA];
+    scoreA+=ptA;scoreB+=ptB;
+    fullHistA.push({a:mA,b:mB});
+    fullHistB.push({a:mB,b:mA});
+
+    const outcomeText=mA==='C'&&mB==='C'?'Mutual cooperation — both earn '+pay.CC+' pts':
+      mA==='D'&&mB==='D'?'Mutual defection — both earn '+pay.DD+' pts':
+      mA==='C'?dA.name+' cooperated, '+dB.name+' defected':
+      dA.name+' defected, '+dB.name+' cooperated';
+
+    const rid='duel-r'+round+'-';
+    function cardHTML(who,move,pts,reasoning){
+      const pill='<span class="pill '+(move==='C'?'pill-c':'pill-d')+'" style="font-size:.75rem">'+(move==='C'?'Cooperate':'Defect')+'</span>';
+      return '<div class="duel-player-name">'+esc(who)+'</div>'+
+        '<div class="duel-move">'+pill+' <span style="font-size:.72rem;color:var(--ink3)">+'+pts+' pts</span></div>'+
+        (reasoning?'<button class="duel-reasoning-toggle" onclick="toggleReasoning(\''+rid+(who==='A'?'a':'b')+'\')">show reasoning</button>'+
+        '<div class="duel-reasoning" id="'+rid+(who==='A'?'a':'b')+'">'+esc(reasoning)+'</div>':'');
+    }
+
+    const cardA=document.getElementById('duel-card-A-'+round);
+    const cardB=document.getElementById('duel-card-B-'+round);
+    cardA.className='duel-player-card';
+    cardB.className='duel-player-card';
+    cardA.innerHTML=cardHTML('A',mA,ptA,resA.reasoning);
+    cardB.innerHTML=cardHTML('B',mB,ptB,resB.reasoning);
+    cardA.querySelector('.duel-player-name').textContent=dA.name;
+    cardB.querySelector('.duel-player-name').textContent=dB.name;
+
+    document.getElementById('duel-content').insertAdjacentHTML('beforeend',
+      '<div class="duel-outcome-bar">'+esc(outcomeText)+'</div>'+
+      '<div class="duel-pts">Running total — '+esc(dA.name)+': <strong>'+scoreA+'</strong> · '+esc(dB.name)+': <strong>'+scoreB+'</strong></div>'
+    );
+    arena.scrollTop=arena.scrollHeight;
+
+    if(round<totalRounds)await new Promise(r=>setTimeout(r,800));
+  }
+
+  if(!duelAborted){
+    const winner=scoreA>scoreB?dA.name:scoreB>scoreA?dB.name:null;
+    document.getElementById('duel-content').insertAdjacentHTML('beforeend',
+      '<div class="duel-final">'+
+        '<div style="display:flex;justify-content:center;gap:3rem;margin-bottom:.75rem">'+
+          '<div style="text-align:center"><div class="score-name">'+esc(dA.name)+'</div><div class="duel-final .score-val" style="font-size:2.2rem;color:var(--accent);font-family:var(--serif)">'+scoreA+'</div>'+(scoreA>scoreB?'<div class="winner-badge">Winner</div>':'')+'</div>'+
+          '<div style="text-align:center"><div class="score-name">'+esc(dB.name)+'</div><div class="duel-final .score-val" style="font-size:2.2rem;color:var(--accent);font-family:var(--serif)">'+scoreB+'</div>'+(scoreB>scoreA?'<div class="winner-badge">Winner</div>':scoreA===scoreB?'<div class="winner-badge">Draw</div>':'')+'</div>'+
+        '</div>'+
+        (winner?'<div style="font-family:var(--serif);font-style:italic;font-size:.85rem;color:var(--ink2)">'+(scoreA===scoreB?'A perfect draw — neither could gain the upper hand.':winner+' prevailed.')+'</div>':'')+
+      '</div>'
+    );
+  }
+
+  btn.disabled=false;btn.textContent='✦ Run again';
+}
+
+function toggleReasoning(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const btn=el.previousElementSibling;
+  if(el.style.display==='block'){el.style.display='none';if(btn)btn.textContent='show reasoning';}
+  else{el.style.display='block';if(btn)btn.textContent='hide reasoning';}
+}
+
+function resetDuel(){
+  duelAborted=true;
+  const btn=document.getElementById('duel-start-btn');
+  if(btn){btn.disabled=false;btn.textContent='✦ Begin the duel';}
+  const arena=document.getElementById('duel-arena');
+  arena.style.alignItems='center';
+  arena.innerHTML='<div class="arena-empty">The duel chamber is silent. Choose two personas and begin.</div>';
+}
+
+function showTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  const tabs=['match','tournament','leaderboard','personas','duel'];
+  document.querySelectorAll('.tab')[tabs.indexOf(tab)].classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+  if(tab==='leaderboard'&&lastTournament)updateLeaderboard(lastTournament);
+  if(tab==='duel')populateDuelSelects();
+}
+
+populateSelects();
+renderPersonas();
+</script>
+</body>
 </html>
