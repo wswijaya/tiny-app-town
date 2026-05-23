@@ -1,0 +1,11 @@
+{
+  "framework": null,
+  "installCommand": "npm install",
+  "buildCommand": null,
+  "devCommand": null,
+  "outputDirectory": ".",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index" },
+    { "source": "/(.*)", "destination": "/prisoners_dilemma_new.html" }
+  ]
+}
