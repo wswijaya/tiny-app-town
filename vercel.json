@@ -1,6 +1,8 @@
 {
   "framework": null,
-  "buildCommand": "",
+  "installCommand": "npm install",
+  "buildCommand": null,
+  "devCommand": null,
   "outputDirectory": ".",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index" },
