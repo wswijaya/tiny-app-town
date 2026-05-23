@@ -359,7 +359,7 @@ select.strat-sel:focus{outline:none;border-color:var(--accent2)}
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" integrity="sha384-mD3vHxZg3bQaahBVNifzPbEkpEEHBSHrXTpEgH+6s8A9FKoXuIFIHEMVfQdMbvwM" crossorigin="anonymous"></script>
 <script>
 const S = [
   {name:"Tit-for-Tat",tag:"Reciprocator",desc:"Starts cooperative. Mirrors the opponent's last move exactly.",fn:(h)=>h.length===0?'C':h[h.length-1].them},
@@ -527,7 +527,7 @@ function noiseViz(hist,nA,nB){
       '<div class="nl-item"><div class="nl-dot" style="background:#eaf3de;border:0.5px solid #3b6d11"></div><span style="color:#3b6d11">DC — B exploited</span></div>'+
       '<div class="nl-item"><div class="nl-dot" style="background:#faeeda"></div><span style="color:var(--ink3)">! = noise flip</span></div>'+
     '</div>'+
-    '<div class="noise-stat">Noise flips: <span>'+totalFlips+'</span> total ('+nA+': <span>'+fA+'</span>, '+nB+': <span>'+fB+'</span>) · Mutual cooperation: <span>'+coopPct+'%</span> · Mutual defection: <span>'+defPct+'%</span></div>'+
+    '<div class="noise-stat">Noise flips: <span>'+totalFlips+'</span> total ('+esc(nA)+': <span>'+fA+'</span>, '+esc(nB)+': <span>'+fB+'</span>) · Mutual cooperation: <span>'+coopPct+'%</span> · Mutual defection: <span>'+defPct+'%</span></div>'+
     '<div style="position:relative;width:100%;height:160px;margin-top:1rem"><canvas id="outcomeChart" role="img" aria-label="Outcome distribution">Outcome distribution.</canvas></div>'+
   '</div>';
 }
@@ -651,7 +651,7 @@ Round transcript:
 ${transcript}`;
 
   try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    const resp=await fetch('/api/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
@@ -769,7 +769,7 @@ async function optimiseDescription(){
   out.textContent='';optimisedDesc='';
   const prompt='You are helping design a Prisoner\'s Dilemma strategy persona. The user has described a persona called "'+( name||'unnamed')+'" with archetype "'+(tag||'unknown')+'".\n\nTheir description: "'+desc+'"\n\nRewrite this as a sharp, precise persona description for a Prisoner\'s Dilemma player. The description should:\n- Be 2-3 sentences maximum\n- Clearly convey the decision-making philosophy (when to cooperate, when to defect, how they respond to betrayal)\n- Be written in third person, present tense\n- Have a slightly literary, aphoristic quality\n- Not mention "Prisoner\'s Dilemma" explicitly\n\nReturn ONLY the rewritten description. No preamble, no explanation, no quotes.';
   try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,stream:true,messages:[{role:'user',content:prompt}]})});
+    const resp=await fetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,stream:true,messages:[{role:'user',content:prompt}]})});
     if(!resp.ok)throw new Error('API '+resp.status);
     const reader=resp.body.getReader();const dec=new TextDecoder();let buf='';
     while(true){
@@ -985,7 +985,7 @@ You MUST end your response with exactly one of these two lines:
 DECISION: COOPERATE
 DECISION: DEFECT`;
 
-  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+  const resp=await fetch('/api/messages',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
@@ -1050,7 +1050,7 @@ async function startDuel(){
         askClaude(dB.name,dB.desc,fullHistB,scoreB,scoreA,round,totalRounds,pay,dA.name)
       ]);
     }catch(err){
-      document.getElementById('duel-content').insertAdjacentHTML('beforeend','<div class="duel-aborted">API error: '+err.message+'</div>');
+      document.getElementById('duel-content').insertAdjacentHTML('beforeend','<div class="duel-aborted">API error: '+esc(err.message)+'</div>');
       break;
     }
     if(duelAborted)break;
