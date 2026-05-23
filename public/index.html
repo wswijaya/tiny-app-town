@@ -380,11 +380,11 @@ select.strat-sel:focus{outline:none;border-color:var(--accent2)}
             </select>
           </div>
           <div class="setting-row">
-            <label>Agents per strategy</label>
-            <select id="evo-pop" style="width:100%;background:white;border:0.5px solid var(--border2);color:var(--ink);padding:5px 8px;font-size:.8rem;border-radius:4px;font-family:var(--sans)">
-              <option value="3">3</option>
-              <option value="5" selected>5</option>
-              <option value="10">10</option>
+            <label>Payoff matrix</label>
+            <select id="evo-payoff" style="width:100%;background:white;border:0.5px solid var(--border2);color:var(--ink);padding:5px 8px;font-size:.8rem;border-radius:4px;font-family:var(--sans)">
+              <option value="classic" selected>Classic</option>
+              <option value="harsh">Harsh</option>
+              <option value="generous">Generous</option>
             </select>
           </div>
         </div>
@@ -1185,75 +1185,69 @@ let evoChart=null;
 async function runEvolution(){
   const gens=parseInt(document.getElementById('evo-gens').value);
   const rounds=parseInt(document.getElementById('evo-rounds').value);
-  const popPerStrat=parseInt(document.getElementById('evo-pop').value);
-  const TOTAL=S.length*popPerStrat;
-  const pay=PAYOFFS.classic;
+  const payKey=document.getElementById('evo-payoff').value;
+  const pay=PAYOFFS[payKey]||PAYOFFS.classic;
   const status=document.getElementById('evo-status');
   const chartWrap=document.getElementById('evo-chart-wrap');
   status.style.display='block';
   chartWrap.style.display='none';
   document.getElementById('evo-survivors').innerHTML='';
 
-  // pop[i] = agent count for strategy i
-  let pop=S.map(()=>popPerStrat);
+  const n=S.length;
+  // Precompute pairwise scores (constant across generations)
+  const scores=Array.from({length:n},(_,i)=>
+    Array.from({length:n},(_,j)=>i===j?0:simulate(i,j,rounds,pay,0).scoreA)
+  );
+
+  // pop[i] = fraction of population (sums to 1), using replicator dynamics
+  let pop=S.map(()=>1/n);
   const history=[pop.slice()];
 
   for(let gen=0;gen<gens;gen++){
     status.textContent='Generation '+(gen+1)+' / '+gens+'…';
     await new Promise(r=>setTimeout(r,0));
 
-    // Weighted fitness: each strategy i earns scoreA against j, scaled by j's population
-    const fitness=S.map(()=>0);
-    for(let i=0;i<S.length;i++){
-      if(pop[i]===0)continue;
-      for(let j=0;j<S.length;j++){
-        if(i===j||pop[j]===0)continue;
-        const{scoreA}=simulate(i,j,rounds,pay,0);
-        fitness[i]+=scoreA*pop[j];
-      }
-    }
+    // fitness[i] = weighted average score against current population
+    const fitness=pop.map((pi,i)=>
+      scores[i].reduce((sum,sij,j)=>sum+sij*pop[j],0)
+    );
+    const meanFit=pop.reduce((sum,pi,i)=>sum+pi*fitness[i],0);
 
-    // Proportional selection → new population counts
-    const totalFit=fitness.reduce((a,b)=>a+b,0);
-    let newPop;
-    if(totalFit===0){
-      newPop=pop.slice();
-    } else {
-      newPop=S.map((_,i)=>Math.floor(fitness[i]/totalFit*TOTAL));
-      // Distribute rounding remainder to highest fractional parts
-      const fracs=S.map((_,i)=>({i,f:(fitness[i]/totalFit*TOTAL)%1}))
-        .sort((a,b)=>b.f-a.f);
-      let assigned=newPop.reduce((a,b)=>a+b,0);
-      for(let k=0;assigned<TOTAL;k++,assigned++) newPop[fracs[k].i]++;
-    }
+    if(meanFit===0){history.push(pop.slice());continue;}
+
+    // Replicator equation: new share proportional to relative fitness
+    let newPop=pop.map((pi,i)=>pi*fitness[i]/meanFit);
+    // Renormalise to fix floating-point drift
+    const total=newPop.reduce((a,b)=>a+b,0);
+    newPop=newPop.map(v=>v/total);
 
     pop=newPop;
     history.push(pop.slice());
   }
 
-  status.textContent='Evolution complete — '+gens+' generations, '+S.length+' strategies.';
-  renderEvoChart(history,TOTAL);
+  status.textContent='Evolution complete — '+gens+' generations, '+n+' strategies.';
+  renderEvoChart(history);
 }
 
-function renderEvoChart(history,total){
+function renderEvoChart(history){
   const gens=history.length-1;
   const labels=Array.from({length:gens+1},(_,i)=>'Gen '+i);
   const palette=['#8b4513','#1565c0','#2e7d32','#6a1b9a','#e65100',
     '#00695c','#c62828','#37474f','#f57f17','#283593'];
 
-  // Rank by final population, break ties by peak
+  // Rank by final share, break ties by peak
   const ranked=S.map((s,i)=>({
     i,name:s.name,tag:s.tag,
     final:history[gens][i],
     peak:Math.max(...history.map(h=>h[i]))
-  })).filter(s=>s.peak>0).sort((a,b)=>b.final-a.final||b.peak-a.peak);
+  })).filter(s=>s.peak>0.0001).sort((a,b)=>b.final-a.final||b.peak-a.peak);
 
   const top=ranked.slice(0,10);
   const rest=ranked.slice(10).map(s=>s.i);
 
   const datasets=top.map((s,idx)=>({
     label:s.name,
-    data:history.map(h=>+(h[s.i]/total*100).toFixed(1)),
+    data:history.map(h=>+(h[s.i]*100).toFixed(1)),
     borderColor:palette[idx%palette.length],
     backgroundColor:'transparent',
     borderWidth:2,pointRadius:0,tension:.3
@@ -1261,7 +1255,7 @@ function renderEvoChart(history,total){
 
   if(rest.length>0) datasets.push({
     label:'Others ('+rest.length+')',
-    data:history.map(h=>+(rest.reduce((a,i)=>a+h[i],0)/total*100).toFixed(1)),
+    data:history.map(h=>+(rest.reduce((a,i)=>a+h[i],0)*100).toFixed(1)),
     borderColor:'#ccc',backgroundColor:'transparent',
     borderWidth:1,borderDash:[4,4],pointRadius:0,tension:.3
   });
@@ -1295,10 +1289,10 @@ function renderEvoChart(history,total){
 
   // Survivors table
   const final=history[gens];
-  const alive=ranked.filter(s=>final[s.i]>0);
-  const extinct=ranked.filter(s=>final[s.i]===0).length;
+  const alive=ranked.filter(s=>final[s.i]>=0.001);
+  const extinct=ranked.filter(s=>final[s.i]<0.001).length;
   const rows=alive.map((s,idx)=>{
-    const pct=(final[s.i]/total*100).toFixed(1);
+    const pct=(final[s.i]*100).toFixed(1);
     return'<tr class="'+(idx===0?'top-r':'')+'"><td><span class="rank">#'+(idx+1)+'</span>'+esc(s.name)+'</td>'
       +'<td style="font-size:.7rem;color:var(--ink3)">'+esc(s.tag)+'</td>'
       +'<td>'+pct+'%</td>'
