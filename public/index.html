@@ -1181,8 +1181,13 @@ function showTab(tab){
 
 // ── Evolutionary Tournament ──────────────────────────────────────────
 let evoChart=null;
+let evoRunning=false;
 
 async function runEvolution(){
+  if(evoRunning)return;
+  evoRunning=true;
+  const btn=document.querySelector('#panel-evolution .tour-btn');
+  if(btn)btn.disabled=true;
   const gens=parseInt(document.getElementById('evo-gens').value);
   const rounds=parseInt(document.getElementById('evo-rounds').value);
   const payKey=document.getElementById('evo-payoff').value;
@@ -1192,6 +1197,7 @@ async function runEvolution(){
   status.style.display='block';
   chartWrap.style.display='none';
   document.getElementById('evo-survivors').innerHTML='';
+  try{
 
   const n=S.length;
   // Precompute pairwise scores (constant across generations)
@@ -1207,10 +1213,12 @@ async function runEvolution(){
     status.textContent='Generation '+(gen+1)+' / '+gens+'…';
     await new Promise(r=>setTimeout(r,0));
 
-    // fitness[i] = weighted average score against current population
-    const fitness=pop.map((pi,i)=>
-      scores[i].reduce((sum,sij,j)=>sum+sij*pop[j],0)
-    );
+    // fitness[i] = score against opponents only (exclude self-play weight)
+    const fitness=pop.map((pi,i)=>{
+      const oppWeight=1-pi;
+      if(oppWeight<1e-10)return 0;
+      return scores[i].reduce((sum,sij,j)=>sum+sij*pop[j],0)/oppWeight;
+    });
     const meanFit=pop.reduce((sum,pi,i)=>sum+pi*fitness[i],0);
 
     if(meanFit===0){history.push(pop.slice());continue;}
@@ -1227,6 +1235,7 @@ async function runEvolution(){
 
   status.textContent='Evolution complete — '+gens+' generations, '+n+' strategies.';
   renderEvoChart(history);
+  }finally{evoRunning=false;if(btn)btn.disabled=false;}
 }
 
 function renderEvoChart(history){
@@ -1298,8 +1307,9 @@ function renderEvoChart(history){
   })}catch(e){canvas.parentElement.innerHTML='<p style="padding:1rem;color:#c62828;font-size:.8rem">Chart error: '+e.message+'</p>';}
 
   // Survivors table — sorted by final share
-  const alive=allStrats.filter(s=>s.final>=0.001);
-  const extinct=allStrats.filter(s=>s.final<0.001);
+  const extinctThreshold=0.1/n;
+  const alive=allStrats.filter(s=>s.final>=extinctThreshold);
+  const extinct=allStrats.filter(s=>s.final<extinctThreshold);
   const survivorRows=alive.map((s,idx)=>{
     const pct=(s.final*100).toFixed(1);
     return'<tr class="'+(idx===0?'top-r':'')+'"><td><span class="rank">#'+(idx+1)+'</span>'+esc(s.name)+'</td>'
