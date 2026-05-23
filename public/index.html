@@ -656,7 +656,7 @@ ${transcript}`;
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
+        model:'claude-sonnet-4-6',
         max_tokens:1000,
         stream:true,
         messages:[{role:'user',content:prompt}]
@@ -770,7 +770,7 @@ async function optimiseDescription(){
   out.textContent='';optimisedDesc='';
   const prompt='You are helping design a Prisoner\'s Dilemma strategy persona. The user has described a persona called "'+( name||'unnamed')+'" with archetype "'+(tag||'unknown')+'".\n\nTheir description: "'+desc+'"\n\nRewrite this as a sharp, precise persona description for a Prisoner\'s Dilemma player. The description should:\n- Be 2-3 sentences maximum\n- Clearly convey the decision-making philosophy (when to cooperate, when to defect, how they respond to betrayal)\n- Be written in third person, present tense\n- Have a slightly literary, aphoristic quality\n- Not mention "Prisoner\'s Dilemma" explicitly\n\nReturn ONLY the rewritten description. No preamble, no explanation, no quotes.';
   try{
-    const resp=await fetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,stream:true,messages:[{role:'user',content:prompt}]})});
+    const resp=await fetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:200,stream:true,messages:[{role:'user',content:prompt}]})});
     if(!resp.ok){const e=await resp.text();throw new Error('API '+resp.status+': '+e);}
     const reader=resp.body.getReader();const dec=new TextDecoder();let buf='';
     while(true){
@@ -990,7 +990,7 @@ DECISION: DEFECT`;
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
-      model:'claude-sonnet-4-20250514',
+      model:'claude-sonnet-4-6',
       max_tokens:400,
       messages:[{role:'user',content:prompt}]
     })
