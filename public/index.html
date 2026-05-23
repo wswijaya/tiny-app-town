@@ -927,11 +927,63 @@ function openEditor(i){
     '<input id="pe-tag-'+i+'" value="'+esc(d.tag)+'" maxlength="40">'+
     '<span class="p-editor-label">Description</span>'+
     '<textarea id="pe-desc-'+i+'" rows="3">'+esc(d.desc)+'</textarea>'+
+    '<div id="pe-opt-wrap-'+i+'" style="display:none;margin-top:.5rem">'+
+      '<span class="p-editor-label" style="color:var(--accent2)">Claude-optimised</span>'+
+      '<div id="pe-opt-'+i+'" style="background:var(--surface2);border:0.5px solid var(--accent2);border-radius:4px;padding:8px 10px;font-family:var(--serif);font-style:italic;font-size:.82rem;color:var(--ink2);line-height:1.6;min-height:2rem;white-space:pre-wrap;margin-top:.25rem"></div>'+
+      '<div style="display:flex;gap:.5rem;margin-top:.4rem;align-items:center">'+
+        '<button class="p-editor-save" style="font-size:.72rem" onclick="acceptPersonaOpt('+i+')">✓ Use this</button>'+
+        '<button class="p-editor-cancel" style="font-size:.72rem" onclick="rejectPersonaOpt('+i+')">Keep mine</button>'+
+        '<button onclick="optimisePersonaEdit('+i+')" style="background:none;border:none;font-size:.72rem;color:var(--ink3);cursor:pointer;font-family:var(--sans);text-decoration:underline;text-underline-offset:2px">↺ Regenerate</button>'+
+      '</div>'+
+    '</div>'+
+    '<div id="pe-err-'+i+'" style="display:none;font-size:.75rem;color:var(--def);margin-top:.4rem;font-family:var(--sans)"></div>'+
     '<div class="p-editor-actions">'+
       '<button class="p-editor-save" onclick="savePersona('+i+')">✓ Save</button>'+
       '<button class="p-editor-cancel" onclick="renderPersonaCard('+i+')">Cancel</button>'+
       '<button class="p-editor-reset" onclick="resetPersona('+i+')">↺ Reset to default</button>'+
+      '<button onclick="optimisePersonaEdit('+i+')" style="background:none;border:none;font-size:.72rem;color:var(--accent2);cursor:pointer;font-family:var(--sans);padding:0">✦ Optimise</button>'+
     '</div></div>';
+}
+
+async function optimisePersonaEdit(i){
+  const name=(document.getElementById('pe-name-'+i).value||'').trim();
+  const tag=(document.getElementById('pe-tag-'+i).value||'').trim();
+  const desc=(document.getElementById('pe-desc-'+i).value||'').trim();
+  const errEl=document.getElementById('pe-err-'+i);
+  const wrap=document.getElementById('pe-opt-wrap-'+i);
+  const out=document.getElementById('pe-opt-'+i);
+  errEl.style.display='none';
+  if(!desc){errEl.textContent='Please enter a description first.';errEl.style.display='block';return;}
+  wrap.style.display='block';
+  out.textContent='Optimising…';
+  const prompt='You are helping design a Prisoner\'s Dilemma strategy persona. The user has described a persona called "'+(name||'unnamed')+'" with archetype "'+(tag||'unknown')+'".\n\nTheir description: "'+desc+'"\n\nRewrite this as a sharp, precise persona description for a Prisoner\'s Dilemma player. The description should:\n- Be 2-3 sentences maximum\n- Clearly convey the decision-making philosophy (when to cooperate, when to defect, how they respond to betrayal)\n- Be written in third person, present tense\n- Have a slightly literary, aphoristic quality\n- Not mention "Prisoner\'s Dilemma" explicitly\n\nReturn ONLY the rewritten description. No preamble, no explanation, no quotes.';
+  try{
+    const resp=await fetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:200,stream:true,messages:[{role:'user',content:prompt}]})});
+    if(!resp.ok){const e=await resp.text();throw new Error('API '+resp.status+': '+e);}
+    const reader=resp.body.getReader();const dec=new TextDecoder();let buf='';let result='';
+    out.textContent='';
+    while(true){
+      const{done,value}=await reader.read();if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n');buf=lines.pop();
+      for(const line of lines){
+        if(!line.startsWith('data:'))continue;
+        const d=line.slice(5).trim();if(d==='[DONE]')break;
+        try{const j=JSON.parse(d);if(j.type==='content_block_delta'&&j.delta&&j.delta.type==='text_delta'){result+=j.delta.text;out.textContent=result;}}catch(e){}
+      }
+    }
+  }catch(err){errEl.textContent='Could not reach Claude: '+err.message;errEl.style.display='block';wrap.style.display='none';}
+}
+
+function acceptPersonaOpt(i){
+  const out=document.getElementById('pe-opt-'+i);
+  const textarea=document.getElementById('pe-desc-'+i);
+  if(out&&textarea)textarea.value=out.textContent;
+  document.getElementById('pe-opt-wrap-'+i).style.display='none';
+}
+
+function rejectPersonaOpt(i){
+  document.getElementById('pe-opt-wrap-'+i).style.display='none';
 }
 
 function savePersona(i){
