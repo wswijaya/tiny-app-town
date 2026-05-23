@@ -637,7 +637,7 @@ Remember: output ONLY the SVG. First character of your response must be '<', las
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: 'claude-sonnet-4-6',
-            max_tokens: 1500,
+            max_tokens: 4096,
             system: SYSTEM_PROMPT,
             messages: [
               { role: 'user', content: `Create an SVG badge for: ${prompt}` },
