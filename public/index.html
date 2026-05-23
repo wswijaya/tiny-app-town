@@ -1268,7 +1268,7 @@ function renderEvoChart(history,total){
 
   document.getElementById('evo-chart-wrap').style.display='block';
   if(evoChart){evoChart.destroy();evoChart=null;}
-  setTimeout(()=>{
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
     const canvas=document.getElementById('evo-chart');
     if(!canvas)return;
     evoChart=new Chart(canvas,{
@@ -1291,7 +1291,7 @@ function renderEvoChart(history,total){
         }
       }
     });
-  },0);
+  }));
 
   // Survivors table
   const final=history[gens];
