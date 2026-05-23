@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NET-TOOLKIT — IPv4 · IPv6 · CIDR · Subnet · Binary</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'IBM Plex Mono', 'Fira Mono', 'Courier New', monospace;
+      background: #f4f3ef;
+      min-height: 100vh;
+      color: #0a0a09;
+    }
+
+    /* ── Header ── */
+    .app-header {
+      background: #ffffff;
+      border-bottom: 2px solid #d4d0c8;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .header-pip {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #2dd4a0;
+      flex-shrink: 0;
+    }
+    .header-icon { font-size: 20px; color: #2a7a5e; line-height: 1; }
+    .header-logo { font-size: 13px; font-weight: 600; color: #0a0a09; letter-spacing: 0.1em; }
+    .header-sub  { font-size: 11px; color: #23221f; margin-left: auto; letter-spacing: 0.06em; }
+
+    /* ── Tabs ── */
+    .tabs {
+      background: #ffffff;
+      display: flex;
+      gap: 0;
+      padding: 0 16px;
+      border-bottom: 1px solid #e2dfd8;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      color: #23221f;
+      padding: 9px 14px;
+      cursor: pointer;
+      border: none;
+      background: none;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn.active {
+      color: #1a6e53;
+      border-bottom: 2px solid #2dd4a0;
+    }
+    .tab-icon { font-size: 13px; }
+
+    /* ── Body ── */
+    .app-body { padding: 20px; }
+
+    /* ── Cards ── */
+    .card {
+      background: #ffffff;
+      border: 1px solid #dddbd6;
+      border-radius: 4px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .card-accent   { border-left: 3px solid #2dd4a0; }
+    .card-warn     { border-left: 3px solid #f59e0b; }
+    .card-blue     { border-left: 3px solid #60a5fa; }
+
+    /* ── Grid layouts ── */
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+    /* ── Form elements ── */
+    .field-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #0a0a09;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      margin-bottom: 6px;
+    }
+    .field-label-xs {
+      font-size: 9px;
+      font-weight: 700;
+      color: #0a0a09;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      margin-bottom: 3px;
+    }
+    .app-input {
+      width: 100%;
+      font-family: inherit;
+      font-size: 13px;
+      color: #0a0a09;
+      background: #f9f8f5;
+      border: 1px solid #dddbd6;
+      border-radius: 3px;
+      padding: 8px 10px;
+      outline: none;
+    }
+    .app-input.err { border-color: #ef4444; }
+    .app-input-sm {
+      font-family: inherit;
+      font-size: 13px;
+      color: #0a0a09;
+      background: #f9f8f5;
+      border: 1px solid #dddbd6;
+      border-radius: 3px;
+      padding: 7px 9px;
+      outline: none;
+      width: 90px;
+    }
+    textarea.app-input { resize: vertical; }
+    .input-row { display: flex; gap: 8px; align-items: flex-end; }
+    .err-msg { font-family: inherit; font-size: 12px; color: #dc2626; margin-top: 6px; }
+
+    /* ── Buttons ── */
+    .btn {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      color: #0f3d2c;
+      background: #2dd4a0;
+      border: none;
+      border-radius: 3px;
+      padding: 9px 18px;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+    .btn-ghost {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      color: #0a0a09;
+      background: #f5f4f0;
+      border: 1px solid #c8c6c0;
+      border-radius: 3px;
+      padding: 9px 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    /* ── Sum rows ── */
+    .sum-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #f0ede8;
+    }
+    .sum-key { font-size: 13px; font-weight: 400; color: #23221f; }
+    .sum-val { font-size: 13px; font-weight: 600; color: #0a0a09; }
+    .sum-val-sm { font-size: 12px; font-weight: 600; color: #0a0a09; }
+
+    /* ── Stat grid ── */
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stat-val { font-size: 14px; font-weight: 600; color: #0a0a09; }
+    .stat-key {
+      font-size: 10px;
+      font-weight: 600;
+      color: #23221f;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 2px;
+    }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 2px;
+      letter-spacing: 0.05em;
+      font-family: inherit;
+    }
+    .badge-green  { background: #d1fae5; color: #065f46; }
+    .badge-blue   { background: #dbeafe; color: #1e40af; }
+    .badge-amber  { background: #fef3c7; color: #78350f; }
+    .badge-red    { background: #fee2e2; color: #991b1b; }
+    .badge-gray   { background: #e5e4e0; color: #2d2c2a; }
+    .badge-purple { background: #ede9fe; color: #5b21b6; }
+
+    /* ── Binary row ── */
+    .bit-row { display: flex; gap: 2px; flex-wrap: wrap; margin-bottom: 8px; }
+    .bit-net {
+      width: 18px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: inherit; font-size: 11px; font-weight: 700;
+      border-radius: 2px;
+      background: #c7d9f5; color: #1e3a8a;
+    }
+    .bit-host {
+      width: 18px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: inherit; font-size: 11px; font-weight: 700;
+      border-radius: 2px;
+      background: #c6f0d8; color: #145229;
+    }
+    .bit-sep {
+      width: 8px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: inherit; font-size: 11px; font-weight: 700;
+      border-radius: 2px;
+      background: transparent; color: #4a4845;
+    }
+    .bit-legend { display: flex; gap: 12px; margin-top: 6px; }
+    .bit-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #23221f; }
+    .bit-dot { width: 10px; height: 10px; border-radius: 1px; }
+
+    /* ── Table ── */
+    .subnet-table { width: 100%; border-collapse: collapse; font-family: inherit; font-size: 12px; }
+    .subnet-table th {
+      text-align: left;
+      padding: 6px 10px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #23221f;
+      border-bottom: 1px solid #dddbd6;
+      background: #f0ede8;
+    }
+    .subnet-table td { padding: 7px 10px; border-bottom: 1px solid #ede9e4; color: #0a0a09; }
+    .scroll-box { max-height: 260px; overflow-y: auto; }
+
+    /* ── Octet breakdown ── */
+    .octet-box {
+      text-align: center;
+      font-family: inherit;
+      font-size: 12px;
+      background: #f9f8f5;
+      border: 1px solid #dddbd6;
+      border-radius: 3px;
+      padding: 5px 3px;
+    }
+    .octet-bin {
+      text-align: center;
+      font-family: inherit;
+      font-size: 10px;
+      background: #f9f8f5;
+      border: 1px solid #dddbd6;
+      border-radius: 3px;
+      padding: 5px 4px;
+      letter-spacing: 0.03em;
+    }
+
+    /* ── Misc ── */
+    .supernet-cidr { font-size: 16px; font-weight: 600; color: #0d9e76; margin-bottom: 10px; }
+    .split-grid { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: flex-end; }
+  </style>
+</head>
+<body>
+
+<!-- Back nav bar -->
+<div style="background:#2c2420;padding:8px 20px;position:sticky;top:0;z-index:1000"><a href="/" style="color:#f7f4ef;font-size:12px;font-family:system-ui,sans-serif;text-decoration:none;letter-spacing:0.05em;opacity:0.8">← Tiny App Town</a></div>
+
+<div class="app-header">
+  <div class="header-pip"></div>
+  <span class="header-icon">⬡</span>
+  <span class="header-logo">NET-TOOLKIT</span>
+  <span class="header-sub">IPv4 · IPv6 · CIDR · Subnet · Binary</span>
+</div>
+
+<div class="tabs" id="tabs">
+  <button class="tab-btn active" data-tab="cidr"><span class="tab-icon">⬡</span> CIDR Range</button>
+  <button class="tab-btn" data-tab="mask"><span class="tab-icon">⊟</span> Subnet Mask</button>
+  <button class="tab-btn" data-tab="ipinfo"><span class="tab-icon">◎</span> IP Info</button>
+  <button class="tab-btn" data-tab="split"><span class="tab-icon">⊞</span> Subnet Splitter</button>
+  <button class="tab-btn" data-tab="super"><span class="tab-icon">⊕</span> Supernet</button>
+  <button class="tab-btn" data-tab="v6"><span class="tab-icon">⬡₆</span> IPv6</button>
+</div>
+
+<div class="app-body">
+  <div id="panel-content"></div>
+</div>
+
+<script>
+// ── Utility Functions ────────────────────────────────────────────────────────
+function ipToLong(ip) {
+  const p = ip.split(".").map(Number);
+  if (p.length !== 4 || p.some(x => isNaN(x) || x < 0 || x > 255)) return null;
+  return ((p[0]<<24)|(p[1]<<16)|(p[2]<<8)|p[3]) >>> 0;
+}
+function longToIp(n) { return [n>>>24,(n>>>16)&255,(n>>>8)&255,n&255].join("."); }
+function prefixToMask(p) { return p === 0 ? 0 : (0xFFFFFFFF << (32-p)) >>> 0; }
+function toBinaryOctets(n) { return [n>>>24,(n>>>16)&255,(n>>>8)&255,n&255].map(o=>o.toString(2).padStart(8,"0")); }
+
+function parseCIDR(s) {
+  const m = s.trim().match(/^(\d+\.\d+\.\d+\.\d+)\/(\d+)$/);
+  if (!m) return null;
+  const prefix = parseInt(m[2]);
+  if (prefix < 0 || prefix > 32) return null;
+  const ip = ipToLong(m[1]);
+  if (ip === null) return null;
+  const mask = prefixToMask(prefix);
+  const network = (ip & mask) >>> 0;
+  const broadcast = (network | (~mask >>> 0)) >>> 0;
+  const first = prefix < 31 ? network+1 : network;
+  const last  = prefix < 31 ? broadcast-1 : broadcast;
+  const total = Math.pow(2, 32-prefix);
+  const usable = prefix < 31 ? total-2 : total;
+  return { ip:longToIp(ip), network:longToIp(network), broadcast:longToIp(broadcast), first:longToIp(first), last:longToIp(last), mask:longToIp(mask), wildcard:longToIp((~mask)>>>0), prefix, total, usable, maskLong:mask, networkLong:network };
+}
+
+function expandIPv6(addr) {
+  let s = addr;
+  if (s.includes("::")) {
+    const sides = s.split("::"), left=sides[0]?sides[0].split(":"):[],right=sides[1]?sides[1].split(":"):[],missing=8-left.length-right.length,mid=Array(missing).fill("0000");
+    s=[...left,...mid,...right].join(":");
+  }
+  return s.split(":").map(g=>g.padStart(4,"0")).join(":");
+}
+function compressIPv6(exp) {
+  const g=exp.split(":"); let best=-1,bestLen=0,cur=-1,curLen=0;
+  g.forEach((x,i)=>{ if(parseInt(x,16)===0){if(cur===-1){cur=i;curLen=1;}else curLen++;if(curLen>bestLen){best=cur;bestLen=curLen;}}else{cur=-1;curLen=0;} });
+  if(bestLen>1){const l=g.slice(0,best).map(x=>parseInt(x,16).toString(16)).join(":");const r=g.slice(best+bestLen).map(x=>parseInt(x,16).toString(16)).join(":");return(l||"")+"::"+(r||"");}
+  return g.map(x=>parseInt(x,16).toString(16)).join(":");
+}
+function getIPClass(ip) {
+  const f = parseInt(ip.split(".")[0]);
+  if (f < 128) return "A"; if (f < 192) return "B"; if (f < 224) return "C";
+  if (f < 240) return "D"; return "E";
+}
+function getIPType(long) {
+  const A=(long>>>24), B=(long>>>16)&255, AB=(long>>>16);
+  if (A===127) return {label:"Loopback",badge:"blue"};
+  if (A===10) return {label:"Private RFC1918",badge:"green"};
+  if (A===172&&B>=16&&B<=31) return {label:"Private RFC1918",badge:"green"};
+  if (AB===0xC0A8) return {label:"Private RFC1918",badge:"green"};
+  if (AB===0xA9FE) return {label:"APIPA / Link-Local",badge:"amber"};
+  if (A>=224&&A<=239) return {label:"Multicast",badge:"purple"};
+  if (long===0) return {label:"Unspecified",badge:"gray"};
+  if (long===0xFFFFFFFF) return {label:"Limited Broadcast",badge:"red"};
+  return {label:"Public / Routable",badge:"blue"};
+}
+function getV6Type(exp) {
+  if(exp==="0000:0000:0000:0000:0000:0000:0000:0001") return {label:"Loopback (::1)",badge:"blue"};
+  if(exp.startsWith("fe80")) return {label:"Link-Local (fe80::/10)",badge:"amber"};
+  if(exp.startsWith("fc")||exp.startsWith("fd")) return {label:"Unique Local ULA (fc00::/7)",badge:"green"};
+  if(exp.startsWith("ff")) return {label:"Multicast (ff00::/8)",badge:"purple"};
+  if(exp.startsWith("2001:0db8")) return {label:"Documentation (2001:db8::/32)",badge:"gray"};
+  if(exp.startsWith("2002")) return {label:"6to4 (2002::/16)",badge:"amber"};
+  if(exp==="0000:0000:0000:0000:0000:0000:0000:0000") return {label:"Unspecified (::/128)",badge:"gray"};
+  return {label:"Global Unicast",badge:"blue"};
+}
+
+// ── HTML Helpers ─────────────────────────────────────────────────────────────
+function badge(type, text, extraStyle) {
+  return `<span class="badge badge-${type}" ${extraStyle ? `style="${extraStyle}"` : ''}>${text}</span>`;
+}
+
+function sumRow(label, value, colorStyle, small) {
+  const valClass = small ? 'sum-val-sm' : 'sum-val';
+  const colorAttr = colorStyle ? ` style="color:${colorStyle}"` : '';
+  return `<div class="sum-row"><span class="sum-key">${label}</span><span class="${valClass}"${colorAttr}>${value}</span></div>`;
+}
+
+function binaryRow(ipLong, prefix) {
+  const octs = toBinaryOctets(ipLong);
+  let html = '<div class="bit-row">';
+  let idx = 0;
+  octs.forEach((oct, oi) => {
+    if (oi > 0) html += '<span class="bit-sep">·</span>';
+    oct.split("").forEach(b => {
+      const cls = idx < prefix ? "bit-net" : "bit-host";
+      html += `<span class="${cls}">${b}</span>`;
+      idx++;
+    });
+  });
+  html += '</div>';
+  return html;
+}
+
+function bitLegend(netLabel, hostLabel) {
+  return `<div class="bit-legend">
+    <div class="bit-legend-item"><div class="bit-dot" style="background:#c7d9f5"></div> ${netLabel || 'Network bits'}</div>
+    <div class="bit-legend-item"><div class="bit-dot" style="background:#c6f0d8"></div> ${hostLabel || 'Host bits'}</div>
+  </div>`;
+}
+
+// ── Panel State ──────────────────────────────────────────────────────────────
+const state = {
+  cidr:  { val: "192.168.10.0/22" },
+  mask:  { prefix: 24, dotted: "255.255.255.0", err: false },
+  ipinfo:{ val: "172.16.50.1" },
+  split: { cidr: "10.0.0.0/16", subP: "24", rows: null, err: "" },
+  super: { text: "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24\n192.168.3.0/24", result: null, err: "" },
+  v6:    { val: "2001:db8::/32", result: null, err: false },
+};
+
+// ── CIDR Panel ───────────────────────────────────────────────────────────────
+function renderCIDR() {
+  const s = state.cidr;
+  const result = parseCIDR(s.val);
+  const err = s.val.trim().length > 0 && !result;
+
+  let html = `
+    <div class="card card-accent">
+      <div class="field-label">CIDR Notation</div>
+      <div class="input-row">
+        <input class="app-input${err ? ' err' : ''}" id="cidr-input" value="${escHtml(s.val)}" placeholder="e.g. 192.168.1.0/24" />
+        <button class="btn" id="cidr-calc">Calculate</button>
+        <button class="btn-ghost" id="cidr-example">Example</button>
+      </div>
+      ${err ? '<div class="err-msg">⚠ Invalid CIDR notation</div>' : ''}
+    </div>`;
+
+  if (result) {
+    html += `
+    <div class="row2">
+      <div class="card">
+        <div class="field-label">Network Summary</div>
+        ${sumRow("Network Address", `${result.network}/${result.prefix}`, "#0d9e76")}
+        ${sumRow("First Usable Host", result.first)}
+        ${sumRow("Last Usable Host", result.last)}
+        ${sumRow("Broadcast Address", result.broadcast, "#dc2626")}
+      </div>
+      <div class="card">
+        <div class="field-label">Address Counts</div>
+        <div class="stat-grid">
+          <div><div class="stat-val">${result.total.toLocaleString()}</div><div class="stat-key">Total</div></div>
+          <div><div class="stat-val" style="color:#0d9e76">${result.usable.toLocaleString()}</div><div class="stat-key">Usable</div></div>
+          <div><div class="stat-val">/${result.prefix}</div><div class="stat-key">Prefix</div></div>
+          <div><div class="stat-val">${32-result.prefix}</div><div class="stat-key">Host Bits</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="field-label">Binary Breakdown — Network Address</div>
+      ${binaryRow(ipToLong(result.network), result.prefix)}
+      ${bitLegend()}
+    </div>
+    <div class="card">
+      <div class="field-label">Mask Representations</div>
+      ${sumRow("Subnet Mask", result.mask)}
+      ${sumRow("Wildcard Mask", result.wildcard, "#b45309")}
+      ${sumRow("CIDR", `/${result.prefix}`, "#2563eb")}
+      ${sumRow("Hex", `0x${result.maskLong.toString(16).padStart(8,"0").toUpperCase()}`, "#0a0a09")}
+    </div>`;
+  }
+
+  return html;
+}
+
+function bindCIDR() {
+  const inp = document.getElementById("cidr-input");
+  inp.addEventListener("input", () => { state.cidr.val = inp.value; renderPanel("cidr"); });
+  document.getElementById("cidr-calc").addEventListener("click", () => { state.cidr.val = inp.value; renderPanel("cidr"); });
+  document.getElementById("cidr-example").addEventListener("click", () => { state.cidr.val = "10.0.0.0/8"; renderPanel("cidr"); });
+}
+
+// ── Mask Panel ───────────────────────────────────────────────────────────────
+function renderMask() {
+  const s = state.mask;
+  const mask = prefixToMask(s.prefix);
+  const wildcard = (~mask)>>>0;
+  const usable = s.prefix < 31 ? (Math.pow(2, 32-s.prefix)-2) : Math.pow(2, 32-s.prefix);
+  const maskIp = longToIp(mask);
+  const octets = maskIp.split(".");
+
+  let html = `
+    <div class="card card-accent">
+      <div class="field-label">Convert Subnet Mask</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:6px">
+        <div>
+          <div class="field-label">CIDR Prefix</div>
+          <input class="app-input${s.err ? ' err' : ''}" id="mask-prefix-input" value="/${s.prefix}" placeholder="/24" />
+        </div>
+        <div>
+          <div class="field-label">Dotted-Decimal</div>
+          <input class="app-input${s.err ? ' err' : ''}" id="mask-dotted-input" value="${escHtml(s.dotted)}" placeholder="255.255.255.0" />
+        </div>
+      </div>
+      ${s.err ? '<div class="err-msg">⚠ Invalid mask value</div>' : ''}
+    </div>
+    <div class="row2">
+      <div class="card">
+        <div class="field-label">All Representations</div>
+        ${sumRow("Prefix", `/${s.prefix}`, "#2563eb")}
+        ${sumRow("Dotted-Decimal", maskIp)}
+        ${sumRow("Wildcard", longToIp(wildcard), "#b45309")}
+        ${sumRow("Hex", `0x${mask.toString(16).padStart(8,"0").toUpperCase()}`, "#0a0a09")}
+        ${sumRow("Usable Hosts", usable.toLocaleString(), "#0d9e76")}
+      </div>
+      <div class="card">
+        <div class="field-label">Octet Breakdown</div>
+        ${octets.map((o, i) => `
+          <div style="margin-bottom:8px">
+            <div class="field-label-xs">Octet ${i+1}</div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <div class="octet-box" style="width:44px">${o}</div>
+              <span style="color:#0a0a09">→</span>
+              <div class="octet-bin">${parseInt(o).toString(2).padStart(8,"0")}</div>
+            </div>
+          </div>`).join("")}
+      </div>
+    </div>
+    <div class="card">
+      <div class="field-label">Binary Mask</div>
+      ${binaryRow(mask, s.prefix)}
+      ${bitLegend("Network bits (1)", "Host bits (0)")}
+    </div>`;
+
+  return html;
+}
+
+function bindMask() {
+  const prefixInp = document.getElementById("mask-prefix-input");
+  const dottedInp = document.getElementById("mask-dotted-input");
+
+  prefixInp.addEventListener("input", () => {
+    const raw = prefixInp.value;
+    const p = parseInt(raw.replace("/",""));
+    if (isNaN(p)||p<0||p>32) { state.mask.err = true; renderPanel("mask"); return; }
+    state.mask.err = false;
+    state.mask.prefix = p;
+    state.mask.dotted = longToIp(prefixToMask(p));
+    renderPanel("mask");
+  });
+
+  dottedInp.addEventListener("input", () => {
+    const v = dottedInp.value;
+    state.mask.dotted = v;
+    const long = ipToLong(v);
+    if (long === null) { state.mask.err = true; renderPanel("mask"); return; }
+    const bits = long.toString(2).padStart(32,"0");
+    if (!/^1*0*$/.test(bits)) { state.mask.err = true; renderPanel("mask"); return; }
+    const p = bits.split("").filter(b=>b==="1").length;
+    state.mask.err = false;
+    state.mask.prefix = p;
+    renderPanel("mask");
+  });
+}
+
+// ── IP Info Panel ─────────────────────────────────────────────────────────────
+function renderIPInfo() {
+  const s = state.ipinfo;
+  const long = ipToLong(s.val);
+  const valid = long !== null;
+  const showErr = !valid && s.val.trim().length > 0;
+
+  let html = `
+    <div class="card card-accent">
+      <div class="field-label">IP Address</div>
+      <div class="input-row">
+        <input class="app-input${showErr ? ' err' : ''}" id="ipinfo-input" value="${escHtml(s.val)}" placeholder="e.g. 10.0.0.1" />
+        <button class="btn-ghost" id="ipinfo-example">Example</button>
+      </div>
+      ${showErr ? '<div class="err-msg">⚠ Invalid IP address</div>' : ''}
+    </div>`;
+
+  if (valid) {
+    const cls = getIPClass(s.val);
+    const type = getIPType(long);
+    const octs = s.val.split(".").map(Number);
+    const clsPrefix = cls==="A"?8:cls==="B"?16:24;
+
+    html += `
+    <div class="row2">
+      <div class="card">
+        <div class="field-label">Classification</div>
+        ${sumRow("IP Address", s.val)}
+        <div class="sum-row"><span class="sum-key">IP Class</span>${badge("blue", `Class ${cls}`)}</div>
+        <div class="sum-row"><span class="sum-key">Type</span>${badge(type.badge, type.label)}</div>
+        ${sumRow("Decimal", long, "#0a0a09")}
+        ${sumRow("Hex", `0x${long.toString(16).toUpperCase().padStart(8,"0")}`, "#0a0a09")}
+      </div>
+      <div class="card">
+        <div class="field-label">Octet Detail</div>
+        ${octs.map((o,i) => sumRow(`Octet ${i+1}`, o)).join("")}
+        ${sumRow("Reverse DNS", `${octs.slice().reverse().join(".")}.in-addr.arpa`, "#0a0a09", true)}
+      </div>
+    </div>
+    <div class="card">
+      <div class="field-label">Binary — default class prefix highlighted</div>
+      ${binaryRow(long, clsPrefix)}
+      ${bitLegend()}
+    </div>`;
+  }
+
+  return html;
+}
+
+function bindIPInfo() {
+  const inp = document.getElementById("ipinfo-input");
+  inp.addEventListener("input", () => { state.ipinfo.val = inp.value; renderPanel("ipinfo"); });
+  document.getElementById("ipinfo-example").addEventListener("click", () => { state.ipinfo.val = "192.168.1.1"; renderPanel("ipinfo"); });
+}
+
+// ── Subnet Splitter Panel ─────────────────────────────────────────────────────
+function renderSplit() {
+  const s = state.split;
+
+  let html = `
+    <div class="card card-accent">
+      <div class="field-label">Split a Network Block</div>
+      <div class="split-grid">
+        <div>
+          <div class="field-label">Base CIDR</div>
+          <input class="app-input" id="split-cidr" value="${escHtml(s.cidr)}" placeholder="10.0.0.0/16" />
+        </div>
+        <div>
+          <div class="field-label">Into /N</div>
+          <input class="app-input-sm" id="split-subp" value="${escHtml(s.subP)}" placeholder="/24" />
+        </div>
+        <button class="btn" id="split-btn" style="height:36px">Split</button>
+      </div>
+      ${s.err ? `<div class="err-msg">⚠ ${escHtml(s.err)}</div>` : ''}
+    </div>`;
+
+  if (s.rows) {
+    html += `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="field-label">Subnets</div>
+        ${badge("green", `${s.rows.length} subnets`)}
+      </div>
+      <div class="scroll-box">
+        <table class="subnet-table">
+          <thead><tr>
+            <th>#</th><th>Network</th><th>First Host</th><th>Last Host</th><th>Broadcast</th><th>Hosts</th>
+          </tr></thead>
+          <tbody>
+            ${s.rows.map(r => `<tr>
+              <td style="color:#23221f">${r.idx}</td>
+              <td style="color:#0d9e76;font-weight:500">${r.net}</td>
+              <td>${r.first}</td>
+              <td>${r.last}</td>
+              <td style="color:#dc2626">${r.bcast}</td>
+              <td>${r.usable}</td>
+            </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  return html;
+}
+
+function calcSplit() {
+  const s = state.split;
+  const base = parseCIDR(s.cidr);
+  const sp = parseInt(s.subP.replace("/",""));
+  if (!base || isNaN(sp) || sp <= base.prefix || sp > 30) {
+    s.err = "Subnet prefix must be > base prefix and ≤ /30"; s.rows = null; return;
+  }
+  const count = Math.pow(2, sp - base.prefix);
+  if (count > 512) { s.err = "Too many subnets (max 512)"; s.rows = null; return; }
+  s.err = "";
+  const subSize = Math.pow(2, 32-sp);
+  const rows = [];
+  for (let i=0;i<count;i++) {
+    const net = (base.networkLong + i*subSize)>>>0;
+    const bcast = (net+subSize-1)>>>0;
+    rows.push({ idx:i+1, net:`${longToIp(net)}/${sp}`, first:longToIp(net+1), last:longToIp(bcast-1), bcast:longToIp(bcast), usable:(subSize-2).toLocaleString() });
+  }
+  s.rows = rows;
+}
+
+function bindSplit() {
+  document.getElementById("split-cidr").addEventListener("input", e => { state.split.cidr = e.target.value; });
+  document.getElementById("split-subp").addEventListener("input", e => { state.split.subP = e.target.value; });
+  document.getElementById("split-btn").addEventListener("click", () => {
+    // Pick up any un-synced input values
+    state.split.cidr = document.getElementById("split-cidr").value;
+    state.split.subP = document.getElementById("split-subp").value;
+    calcSplit();
+    renderPanel("split");
+  });
+}
+
+// ── Supernet Panel ────────────────────────────────────────────────────────────
+const SUPER_EXAMPLE = "192.168.0.0/24\n192.168.1.0/24\n192.168.2.0/24\n192.168.3.0/24";
+
+function renderSuper() {
+  const s = state.super;
+  const r = s.result;
+
+  let html = `
+    <div class="card card-accent">
+      <div class="field-label">Route Summarization — Enter CIDRs (one per line)</div>
+      <textarea class="app-input" id="super-text" rows="5">${escHtml(s.text)}</textarea>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn" id="super-calc">Summarize</button>
+        <button class="btn-ghost" id="super-example">Example</button>
+      </div>
+      ${s.err ? `<div class="err-msg">⚠ ${escHtml(s.err)}</div>` : ''}
+    </div>`;
+
+  if (r) {
+    html += `
+    <div class="row2">
+      <div class="card card-accent">
+        <div class="field-label">Summary Route</div>
+        <div class="supernet-cidr">${escHtml(r.cidr)}</div>
+        ${sumRow("Network", r.network)}
+        ${sumRow("Broadcast", r.broadcast, "#dc2626")}
+        ${sumRow("Mask", r.mask)}
+      </div>
+      <div class="card">
+        <div class="field-label">Coverage Stats</div>
+        ${sumRow("Supernet Addresses", r.stotal.toLocaleString())}
+        ${sumRow("Input Addresses", r.itotal.toLocaleString())}
+        ${sumRow("Efficiency", `${r.eff}%`, parseFloat(r.eff)>=90?"#0d9e76":"#b45309")}
+        ${sumRow("Input Networks", r.count)}
+      </div>
+    </div>
+    <div class="card">
+      <div class="field-label">Input Networks</div>
+      ${r.nets.map((n,i) => sumRow(`Network ${i+1}`, `${n.network}/${n.prefix}`)).join("")}
+    </div>`;
+  }
+
+  return html;
+}
+
+function calcSuper() {
+  const s = state.super;
+  const lines = s.text.trim().split("\n").map(x=>x.trim()).filter(Boolean);
+  const nets = lines.map(parseCIDR);
+  if (nets.some(n=>!n)||nets.length<2) { s.err = "One or more invalid CIDRs"; s.result = null; return; }
+  s.err = "";
+  let commonBits = 32;
+  const first = nets[0].networkLong;
+  for (const n of nets) { let diff=first^n.networkLong,bits=0; while(diff>0){diff>>>=1;bits++;} commonBits=Math.min(commonBits,32-bits); }
+  const sp = commonBits;
+  const sm = prefixToMask(sp);
+  const sn = (first&sm)>>>0;
+  const sb = (sn|(~sm>>>0))>>>0;
+  const stotal = Math.pow(2,32-sp);
+  const itotal = nets.reduce((acc,n)=>acc+n.total,0);
+  s.result = { cidr:`${longToIp(sn)}/${sp}`, network:longToIp(sn), broadcast:longToIp(sb), mask:longToIp(sm), stotal, itotal, eff:((itotal/stotal)*100).toFixed(1), count:nets.length, nets };
+}
+
+function bindSuper() {
+  document.getElementById("super-text").addEventListener("input", e => { state.super.text = e.target.value; });
+  document.getElementById("super-calc").addEventListener("click", () => {
+    state.super.text = document.getElementById("super-text").value;
+    calcSuper();
+    renderPanel("super");
+  });
+  document.getElementById("super-example").addEventListener("click", () => {
+    state.super.text = SUPER_EXAMPLE;
+    renderPanel("super");
+  });
+}
+
+// ── IPv6 Panel ────────────────────────────────────────────────────────────────
+function calcV6(v) {
+  const s = state.v6;
+  const m = v.trim().match(/^([0-9a-fA-F:]+)\/(\d+)$/);
+  if (!m) { s.err = true; s.result = null; return; }
+  const prefix = parseInt(m[2]);
+  if (prefix<0||prefix>128) { s.err = true; s.result = null; return; }
+  let exp;
+  try { exp = expandIPv6(m[1]); } catch(e) { s.err = true; s.result = null; return; }
+  if (exp.split(":").length!==8) { s.err = true; s.result = null; return; }
+  s.err = false;
+  const compressed = compressIPv6(exp);
+  const big = BigInt("0x"+exp.split(":").join(""));
+  const maskBits = prefix===0?0n:((1n<<128n)-1n)&~((1n<<BigInt(128-prefix))-1n);
+  const netBig = big & maskBits;
+  const lastBig = netBig | ((1n<<BigInt(128-prefix))-1n);
+  function bigToExp(b){const h=b.toString(16).padStart(32,"0");return expandIPv6(h.match(/.{4}/g).join(":"));}
+  const netExp = bigToExp(netBig), lastExp = bigToExp(lastBig);
+  const hb = 128-prefix;
+  const hcount = hb<=53?`${(2**hb).toLocaleString()}`:`2^${hb} (vast)`;
+  const type = getV6Type(exp);
+  s.result = { compressed, exp, prefix, netComp:compressIPv6(netExp), netExp, lastComp:compressIPv6(lastExp), hcount, type };
+}
+
+function renderV6() {
+  const s = state.v6;
+  const r = s.result;
+
+  let html = `
+    <div class="card card-accent">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div class="field-label">IPv6 CIDR</div>
+        ${badge("purple", "IPv6")}
+      </div>
+      <div class="input-row">
+        <input class="app-input${s.err ? ' err' : ''}" id="v6-input" value="${escHtml(s.val)}" placeholder="e.g. 2001:db8::/32" />
+        <button class="btn" id="v6-calc">Calculate</button>
+        <button class="btn-ghost" id="v6-example">Example</button>
+      </div>
+      ${s.err ? '<div class="err-msg">⚠ Invalid IPv6 CIDR</div>' : ''}
+    </div>`;
+
+  if (r) {
+    html += `
+    <div class="row2">
+      <div class="card">
+        <div class="field-label">Network Info</div>
+        ${sumRow("Network", `${escHtml(r.netComp)}/${r.prefix}`, "#0d9e76", true)}
+        ${sumRow("Prefix Length", `/${r.prefix}`, "#2563eb")}
+        ${sumRow("Host Bits", 128-r.prefix)}
+        ${sumRow("Last Address", escHtml(r.lastComp), "#dc2626", true)}
+      </div>
+      <div class="card">
+        <div class="field-label">Address Space</div>
+        ${sumRow("Total Addresses", escHtml(r.hcount))}
+        <div class="sum-row"><span class="sum-key">Type</span>${badge(r.type.badge, r.type.label.split(" ")[0])}</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="field-label">Address Forms</div>
+      ${sumRow("Compressed", escHtml(r.compressed), "#0d9e76", true)}
+      ${sumRow("Expanded", escHtml(r.exp), "#0a0a09", true)}
+      ${sumRow("Network (compressed)", escHtml(r.netComp), null, true)}
+      ${sumRow("Network (expanded)", escHtml(r.netExp), "#0a0a09", true)}
+    </div>
+    <div class="card">
+      <div class="field-label">Address Type Classification</div>
+      ${badge(r.type.badge, r.type.label, "font-size:12px;padding:4px 12px")}
+    </div>`;
+  }
+
+  return html;
+}
+
+function bindV6() {
+  const inp = document.getElementById("v6-input");
+  inp.addEventListener("input", () => { state.v6.val = inp.value; calcV6(inp.value); renderPanel("v6"); });
+  document.getElementById("v6-calc").addEventListener("click", () => { calcV6(state.v6.val); renderPanel("v6"); });
+  document.getElementById("v6-example").addEventListener("click", () => {
+    state.v6.val = "fe80::/10";
+    calcV6("fe80::/10");
+    renderPanel("v6");
+  });
+}
+
+// ── Escape helper ─────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;");
+}
+
+// ── Router ────────────────────────────────────────────────────────────────────
+const renderers = { cidr: renderCIDR, mask: renderMask, ipinfo: renderIPInfo, split: renderSplit, super: renderSuper, v6: renderV6 };
+const binders   = { cidr: bindCIDR,   mask: bindMask,   ipinfo: bindIPInfo,   split: bindSplit,   super: bindSuper,   v6: bindV6   };
+
+let activeTab = "cidr";
+
+function renderPanel(id) {
+  const panel = document.getElementById("panel-content");
+  panel.innerHTML = renderers[id]();
+  binders[id]();
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    activeTab = btn.dataset.tab;
+    renderPanel(activeTab);
+  });
+});
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+calcV6("2001:db8::/32");
+renderPanel("cidr");
+</script>
+</body>
+</html>

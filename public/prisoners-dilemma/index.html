@@ -145,6 +145,10 @@ select.strat-sel:focus{outline:none;border-color:var(--accent2)}
 </style>
 </head>
 <body>
+<div style="background:#2c2420;padding:8px 20px;position:sticky;top:0;z-index:1000">
+  <a href="/" style="color:#f7f4ef;font-size:12px;font-family:system-ui,sans-serif;text-decoration:none;letter-spacing:0.05em;opacity:0.8">← Tiny App Town</a>
+</div>
+<div id="root"></div>
 <div class="app">
   <div class="header">
     <div class="eyebrow">An experiment in machine cooperation</div>
@@ -158,6 +162,7 @@ select.strat-sel:focus{outline:none;border-color:var(--accent2)}
     <button class="tab" onclick="showTab('leaderboard')">🏆 Leaderboard</button>
     <button class="tab" onclick="showTab('personas')">◈ Personas</button>
     <button class="tab" onclick="showTab('duel')">✦ AI Duel</button>
+    <button class="tab" onclick="showTab('evolution')">↺ Evolution</button>
   </div>
 
   <div class="content">
@@ -288,6 +293,10 @@ select.strat-sel:focus{outline:none;border-color:var(--accent2)}
           <label class="p-editor-label">Your description <span style="color:var(--ink4);font-weight:400;text-transform:none;letter-spacing:0"> — describe how this persona thinks and decides</span></label>
           <textarea id="creator-desc" rows="3" placeholder="e.g. Seeks middle ground in all conflicts. Cooperates by default but withdraws trust incrementally when betrayed, never fully defecting but never fully forgiving either." style="width:100%;background:var(--surface2);border:0.5px solid var(--border2);color:var(--ink);font-family:var(--serif);font-style:italic;font-size:.82rem;border-radius:4px;padding:6px 10px;resize:vertical;line-height:1.6"></textarea>
         </div>
+        <div style="margin-bottom:.75rem">
+          <label class="p-editor-label">Base behavior <span style="color:var(--ink4);font-weight:400;text-transform:none;letter-spacing:0"> — algorithmic strategy used in Match, Tournament &amp; Evolution</span></label>
+          <select id="creator-base" style="width:100%;background:var(--surface2);border:0.5px solid var(--border2);color:var(--ink);font-family:var(--sans);font-size:.82rem;border-radius:4px;padding:6px 10px"></select>
+        </div>
         <div id="creator-optimised-wrap" style="display:none;margin-bottom:.75rem">
           <label class="p-editor-label" style="color:var(--accent2)">Claude-optimised description</label>
           <div id="creator-optimised" style="background:var(--surface2);border:0.5px solid var(--accent2);border-radius:4px;padding:8px 10px;font-family:var(--serif);font-style:italic;font-size:.82rem;color:var(--ink2);line-height:1.6;min-height:2rem;white-space:pre-wrap"></div>
@@ -356,10 +365,51 @@ select.strat-sel:focus{outline:none;border-color:var(--accent2)}
       </div>
     </div>
 
+    <div id="panel-evolution" class="panel">
+      <div style="margin:1.25rem 0 1rem;border:0.5px solid var(--border2);background:white;border-radius:8px;padding:1rem 1.25rem">
+        <p style="font-style:italic;color:var(--ink3);font-size:.82rem;margin-bottom:.75rem;font-family:var(--serif)">Strategies compete across generations. High scorers reproduce; low scorers fade. Watch the ecosystem evolve.</p>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem">
+          <div class="setting-row">
+            <label>Generations</label>
+            <select id="evo-gens" style="width:100%;background:white;border:0.5px solid var(--border2);color:var(--ink);padding:5px 8px;font-size:.8rem;border-radius:4px;font-family:var(--sans)">
+              <option value="10">10</option>
+              <option value="20" selected>20</option>
+              <option value="30">30</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label>Rounds per match</label>
+            <select id="evo-rounds" style="width:100%;background:white;border:0.5px solid var(--border2);color:var(--ink);padding:5px 8px;font-size:.8rem;border-radius:4px;font-family:var(--sans)">
+              <option value="5">5 rounds</option>
+              <option value="10" selected>10 rounds</option>
+              <option value="20">20 rounds</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label>Payoff matrix</label>
+            <select id="evo-payoff" style="width:100%;background:white;border:0.5px solid var(--border2);color:var(--ink);padding:5px 8px;font-size:.8rem;border-radius:4px;font-family:var(--sans)">
+              <option value="classic" selected>Classic</option>
+              <option value="harsh">Harsh</option>
+              <option value="generous">Generous</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:1rem;text-align:center">
+          <button class="tour-btn" onclick="runEvolution()">▶ Run evolution</button>
+        </div>
+      </div>
+      <div id="evo-status" style="display:none;text-align:center;font-size:.8rem;color:var(--ink3);padding:.5rem 0;font-family:var(--sans)"></div>
+      <div id="evo-chart-wrap" style="display:none;background:white;border:0.5px solid var(--border2);border-radius:8px;padding:1.25rem;margin-bottom:1rem">
+        <div style="position:relative;width:100%;height:340px"><canvas id="evo-chart"></canvas></div>
+      </div>
+      <div id="evo-survivors"></div>
+    </div>
+
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" integrity="sha384-mD3vHxZg3bQaahBVNifzPbEkpEEHBSHrXTpEgH+6s8A9FKoXuIFIHEMVfQdMbvwM" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 const S = [
   {name:"Tit-for-Tat",tag:"Reciprocator",desc:"Starts cooperative. Mirrors the opponent's last move exactly.",fn:(h)=>h.length===0?'C':h[h.length-1].them},
@@ -435,6 +485,9 @@ function populateSelects(){
     sel.value=i===0?0:1;
   });
   updateDesc('A');updateDesc('B');
+  const baseSel=document.getElementById('creator-base');
+  if(baseSel&&baseSel.options.length===0)
+    S.forEach((s,idx)=>{const o=document.createElement('option');o.value=idx;o.textContent=s.name+' — '+s.tag;baseSel.appendChild(o);});
 }
 
 function updateDesc(p){
@@ -655,7 +708,7 @@ ${transcript}`;
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
+        model:'claude-sonnet-4-6',
         max_tokens:1000,
         stream:true,
         messages:[{role:'user',content:prompt}]
@@ -746,6 +799,7 @@ function toggleCreator(){
     document.getElementById('creator-name').value='';
     document.getElementById('creator-tag').value='';
     document.getElementById('creator-desc').value='';
+    document.getElementById('creator-base').value='0';
     document.getElementById('creator-optimised-wrap').style.display='none';
     document.getElementById('creator-error').style.display='none';
     optimisedDesc='';
@@ -769,8 +823,8 @@ async function optimiseDescription(){
   out.textContent='';optimisedDesc='';
   const prompt='You are helping design a Prisoner\'s Dilemma strategy persona. The user has described a persona called "'+( name||'unnamed')+'" with archetype "'+(tag||'unknown')+'".\n\nTheir description: "'+desc+'"\n\nRewrite this as a sharp, precise persona description for a Prisoner\'s Dilemma player. The description should:\n- Be 2-3 sentences maximum\n- Clearly convey the decision-making philosophy (when to cooperate, when to defect, how they respond to betrayal)\n- Be written in third person, present tense\n- Have a slightly literary, aphoristic quality\n- Not mention "Prisoner\'s Dilemma" explicitly\n\nReturn ONLY the rewritten description. No preamble, no explanation, no quotes.';
   try{
-    const resp=await fetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,stream:true,messages:[{role:'user',content:prompt}]})});
-    if(!resp.ok)throw new Error('API '+resp.status);
+    const resp=await fetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:200,stream:true,messages:[{role:'user',content:prompt}]})});
+    if(!resp.ok){const e=await resp.text();throw new Error('API '+resp.status+': '+e);}
     const reader=resp.body.getReader();const dec=new TextDecoder();let buf='';
     while(true){
       const{done,value}=await reader.read();if(done)break;
@@ -807,7 +861,8 @@ function addNewPersona(){
   if(!name){errEl.textContent='Please enter a name.';errEl.style.display='block';return;}
   if(!desc){errEl.textContent='Please enter a description.';errEl.style.display='block';return;}
   const id='c'+Date.now();
-  CUSTOM_PERSONAS.push({name,tag:tag||'Custom',desc,custom:true,id,fn:(h)=>{if(h.length===0)return'C';return h.filter(r=>r.them==='C').length/h.length>=0.5?'C':'D';}});
+  const baseIdx=parseInt(document.getElementById('creator-base').value)||0;
+  CUSTOM_PERSONAS.push({name,tag:tag||'Custom',desc,custom:true,id,baseIdx,fn:S[baseIdx].fn});
   toggleCreator();renderPersonas();refreshSelects();refreshDuelSelects();
   setTimeout(()=>{const el=document.getElementById('pcard-custom-'+id);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},120);
 }
@@ -842,9 +897,11 @@ function renderPersonaCard(i){
 function renderCustomPersonaCard(p){
   const card=document.getElementById('pcard-custom-'+p.id);if(!card)return;
   card.className='p-card custom-card';
+  const baseName=S[p.baseIdx!=null?p.baseIdx:0].name;
   card.innerHTML='<button class="edit-btn" onclick="openCustomEditor(\''+p.id+'\')">✎ edit</button>'+
     '<div class="p-name">'+esc(p.name)+'</div>'+
     '<div class="p-tag">'+esc(p.tag)+'</div>'+
+    '<div style="font-size:.68rem;color:var(--ink3);margin:.15rem 0 .35rem;font-family:var(--sans)">Plays as: '+esc(baseName)+'</div>'+
     '<div class="p-desc">'+esc(p.desc)+'</div>'+
     '<button onclick="deleteCustomPersona(\''+p.id+'\')" style="margin-top:.6rem;font-size:.68rem;color:var(--def);background:none;border:none;cursor:pointer;font-family:var(--sans);padding:0">✕ Remove</button>';
 }
@@ -884,11 +941,63 @@ function openEditor(i){
     '<input id="pe-tag-'+i+'" value="'+esc(d.tag)+'" maxlength="40">'+
     '<span class="p-editor-label">Description</span>'+
     '<textarea id="pe-desc-'+i+'" rows="3">'+esc(d.desc)+'</textarea>'+
+    '<div id="pe-opt-wrap-'+i+'" style="display:none;margin-top:.5rem">'+
+      '<span class="p-editor-label" style="color:var(--accent2)">Claude-optimised</span>'+
+      '<div id="pe-opt-'+i+'" style="background:var(--surface2);border:0.5px solid var(--accent2);border-radius:4px;padding:8px 10px;font-family:var(--serif);font-style:italic;font-size:.82rem;color:var(--ink2);line-height:1.6;min-height:2rem;white-space:pre-wrap;margin-top:.25rem"></div>'+
+      '<div style="display:flex;gap:.5rem;margin-top:.4rem;align-items:center">'+
+        '<button class="p-editor-save" style="font-size:.72rem" onclick="acceptPersonaOpt('+i+')">✓ Use this</button>'+
+        '<button class="p-editor-cancel" style="font-size:.72rem" onclick="rejectPersonaOpt('+i+')">Keep mine</button>'+
+        '<button onclick="optimisePersonaEdit('+i+')" style="background:none;border:none;font-size:.72rem;color:var(--ink3);cursor:pointer;font-family:var(--sans);text-decoration:underline;text-underline-offset:2px">↺ Regenerate</button>'+
+      '</div>'+
+    '</div>'+
+    '<div id="pe-err-'+i+'" style="display:none;font-size:.75rem;color:var(--def);margin-top:.4rem;font-family:var(--sans)"></div>'+
     '<div class="p-editor-actions">'+
       '<button class="p-editor-save" onclick="savePersona('+i+')">✓ Save</button>'+
       '<button class="p-editor-cancel" onclick="renderPersonaCard('+i+')">Cancel</button>'+
       '<button class="p-editor-reset" onclick="resetPersona('+i+')">↺ Reset to default</button>'+
+      '<button onclick="optimisePersonaEdit('+i+')" style="background:none;border:none;font-size:.72rem;color:var(--accent2);cursor:pointer;font-family:var(--sans);padding:0">✦ Optimise</button>'+
     '</div></div>';
+}
+
+async function optimisePersonaEdit(i){
+  const name=(document.getElementById('pe-name-'+i).value||'').trim();
+  const tag=(document.getElementById('pe-tag-'+i).value||'').trim();
+  const desc=(document.getElementById('pe-desc-'+i).value||'').trim();
+  const errEl=document.getElementById('pe-err-'+i);
+  const wrap=document.getElementById('pe-opt-wrap-'+i);
+  const out=document.getElementById('pe-opt-'+i);
+  errEl.style.display='none';
+  if(!desc){errEl.textContent='Please enter a description first.';errEl.style.display='block';return;}
+  wrap.style.display='block';
+  out.textContent='Optimising…';
+  const prompt='You are helping design a Prisoner\'s Dilemma strategy persona. The user has described a persona called "'+(name||'unnamed')+'" with archetype "'+(tag||'unknown')+'".\n\nTheir description: "'+desc+'"\n\nRewrite this as a sharp, precise persona description for a Prisoner\'s Dilemma player. The description should:\n- Be 2-3 sentences maximum\n- Clearly convey the decision-making philosophy (when to cooperate, when to defect, how they respond to betrayal)\n- Be written in third person, present tense\n- Have a slightly literary, aphoristic quality\n- Not mention "Prisoner\'s Dilemma" explicitly\n\nReturn ONLY the rewritten description. No preamble, no explanation, no quotes.';
+  try{
+    const resp=await fetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:200,stream:true,messages:[{role:'user',content:prompt}]})});
+    if(!resp.ok){const e=await resp.text();throw new Error('API '+resp.status+': '+e);}
+    const reader=resp.body.getReader();const dec=new TextDecoder();let buf='';let result='';
+    out.textContent='';
+    while(true){
+      const{done,value}=await reader.read();if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n');buf=lines.pop();
+      for(const line of lines){
+        if(!line.startsWith('data:'))continue;
+        const d=line.slice(5).trim();if(d==='[DONE]')break;
+        try{const j=JSON.parse(d);if(j.type==='content_block_delta'&&j.delta&&j.delta.type==='text_delta'){result+=j.delta.text;out.textContent=result;}}catch(e){}
+      }
+    }
+  }catch(err){errEl.textContent='Could not reach Claude: '+err.message;errEl.style.display='block';wrap.style.display='none';}
+}
+
+function acceptPersonaOpt(i){
+  const out=document.getElementById('pe-opt-'+i);
+  const textarea=document.getElementById('pe-desc-'+i);
+  if(out&&textarea)textarea.value=out.textContent;
+  document.getElementById('pe-opt-wrap-'+i).style.display='none';
+}
+
+function rejectPersonaOpt(i){
+  document.getElementById('pe-opt-wrap-'+i).style.display='none';
 }
 
 function savePersona(i){
@@ -989,12 +1098,12 @@ DECISION: DEFECT`;
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
-      model:'claude-sonnet-4-20250514',
+      model:'claude-sonnet-4-6',
       max_tokens:400,
       messages:[{role:'user',content:prompt}]
     })
   });
-  if(!resp.ok)throw new Error('API '+resp.status);
+  if(!resp.ok){const e=await resp.text();throw new Error('API '+resp.status+': '+e);}
   const data=await resp.json();
   const text=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
   const match=text.match(/DECISION:\s*(COOPERATE|DEFECT)/i);
@@ -1129,11 +1238,161 @@ function resetDuel(){
 function showTab(tab){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  const tabs=['match','tournament','leaderboard','personas','duel'];
+  const tabs=['match','tournament','leaderboard','personas','duel','evolution'];
   document.querySelectorAll('.tab')[tabs.indexOf(tab)].classList.add('active');
   document.getElementById('panel-'+tab).classList.add('active');
   if(tab==='leaderboard'&&lastTournament)updateLeaderboard(lastTournament);
   if(tab==='duel')populateDuelSelects();
+}
+
+// ── Evolutionary Tournament ──────────────────────────────────────────
+let evoChart=null;
+let evoRunning=false;
+
+async function runEvolution(){
+  if(evoRunning)return;
+  evoRunning=true;
+  const btn=document.querySelector('#panel-evolution .tour-btn');
+  if(btn)btn.disabled=true;
+  const gens=parseInt(document.getElementById('evo-gens').value);
+  const rounds=parseInt(document.getElementById('evo-rounds').value);
+  const payKey=document.getElementById('evo-payoff').value;
+  const pay=PAYOFFS[payKey]||PAYOFFS.classic;
+  const status=document.getElementById('evo-status');
+  const chartWrap=document.getElementById('evo-chart-wrap');
+  status.style.display='block';
+  chartWrap.style.display='none';
+  document.getElementById('evo-survivors').innerHTML='';
+  try{
+
+  const n=S.length;
+  // Precompute pairwise scores (constant across generations)
+  const scores=Array.from({length:n},(_,i)=>
+    Array.from({length:n},(_,j)=>i===j?0:simulate(i,j,rounds,pay,0).scoreA)
+  );
+
+  // pop[i] = fraction of population (sums to 1), using replicator dynamics
+  let pop=S.map(()=>1/n);
+  const history=[pop.slice()];
+
+  for(let gen=0;gen<gens;gen++){
+    status.textContent='Generation '+(gen+1)+' / '+gens+'…';
+    await new Promise(r=>setTimeout(r,0));
+
+    // fitness[i] = score against opponents only (exclude self-play weight)
+    const fitness=pop.map((pi,i)=>{
+      const oppWeight=1-pi;
+      if(oppWeight<1e-10)return 0;
+      return scores[i].reduce((sum,sij,j)=>sum+sij*pop[j],0)/oppWeight;
+    });
+    const meanFit=pop.reduce((sum,pi,i)=>sum+pi*fitness[i],0);
+
+    if(meanFit===0){history.push(pop.slice());continue;}
+
+    // Replicator equation: new share proportional to relative fitness
+    let newPop=pop.map((pi,i)=>pi*fitness[i]/meanFit);
+    // Renormalise to fix floating-point drift
+    const total=newPop.reduce((a,b)=>a+b,0);
+    newPop=newPop.map(v=>v/total);
+
+    pop=newPop;
+    history.push(pop.slice());
+  }
+
+  status.textContent='Evolution complete — '+gens+' generations, '+n+' strategies.';
+  renderEvoChart(history);
+  }finally{evoRunning=false;if(btn)btn.disabled=false;}
+}
+
+function renderEvoChart(history){
+  const gens=history.length-1;
+  const n=S.length;
+  const startShare=1/n;
+  const labels=Array.from({length:gens+1},(_,i)=>'Gen '+i);
+  const palette=['#8b4513','#1565c0','#2e7d32','#6a1b9a','#e65100',
+    '#00695c','#c62828','#37474f','#f57f17','#283593'];
+
+  // Annotate every strategy with final share + max deviation from starting equal share
+  const allStrats=S.map((s,i)=>({
+    i,name:s.name,tag:s.tag,
+    final:history[gens][i],
+    maxDev:Math.max(...history.map(h=>Math.abs(h[i]-startShare)))
+  })).sort((a,b)=>b.final-a.final);
+
+  // Chart: top 10 by max deviation — shows the most interesting movers (winners AND notable losers)
+  const chartStrats=allStrats.slice().sort((a,b)=>b.maxDev-a.maxDev).slice(0,10);
+  const flatCount=n-chartStrats.length;
+
+  const datasets=chartStrats.map((s,idx)=>({
+    label:s.name,
+    data:history.map(h=>+(h[s.i]*100).toFixed(1)),
+    borderColor:palette[idx%palette.length],
+    backgroundColor:'transparent',
+    borderWidth:2,pointRadius:0,tension:.3
+  }));
+
+  const chartWrap=document.getElementById('evo-chart-wrap');
+  chartWrap.style.display='block';
+  const W=chartWrap.offsetWidth-42;
+  if(evoChart){evoChart.destroy();evoChart=null;}
+  const canvas=document.getElementById('evo-chart');
+  canvas.width=Math.max(W,400);
+  canvas.height=340;
+
+  const flatNote=flatCount>0
+    ?{id:'flatNote',afterDraw(chart){
+        const ctx=chart.ctx;
+        ctx.save();
+        ctx.font='11px sans-serif';
+        ctx.fillStyle='#9e9e9e';
+        ctx.textAlign='right';
+        ctx.fillText(flatCount+' near-flat strateg'+(flatCount===1?'y':'ies')+' hidden',chart.width-8,chart.height-4);
+        ctx.restore();
+      }}
+    :null;
+
+  try{evoChart=new Chart(canvas,{
+    type:'line',
+    data:{labels,datasets},
+    plugins:flatNote?[flatNote]:[],
+    options:{
+      responsive:false,
+      interaction:{mode:'index',intersect:false},
+      scales:{
+        y:{min:0,max:100,title:{display:true,text:'% of population'},
+          ticks:{font:{size:11},color:'#8a847c',callback:v=>v+'%'},
+          grid:{color:'rgba(90,75,55,0.08)'}},
+        x:{ticks:{font:{size:11},color:'#8a847c',maxTicksLimit:12},
+          grid:{display:false}}
+      },
+      plugins:{
+        legend:{position:'right',labels:{font:{size:11},boxWidth:12,padding:8}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+'%'}}
+      }
+    }
+  })}catch(e){canvas.parentElement.innerHTML='<p style="padding:1rem;color:#c62828;font-size:.8rem">Chart error: '+e.message+'</p>';}
+
+  // Survivors table — sorted by final share
+  const extinctThreshold=0.1/n;
+  const alive=allStrats.filter(s=>s.final>=extinctThreshold);
+  const extinct=allStrats.filter(s=>s.final<extinctThreshold);
+  const survivorRows=alive.map((s,idx)=>{
+    const pct=(s.final*100).toFixed(1);
+    return'<tr class="'+(idx===0?'top-r':'')+'"><td><span class="rank">#'+(idx+1)+'</span>'+esc(s.name)+'</td>'
+      +'<td style="font-size:.7rem;color:var(--ink3)">'+esc(s.tag)+'</td>'
+      +'<td>'+pct+'%</td>'
+      +'<td style="color:var(--accent);font-size:.75rem">Survived</td></tr>';
+  }).join('');
+  const extinctRows=extinct.map(s=>
+    '<tr><td style="color:var(--ink3)">'+esc(s.name)+'</td>'
+    +'<td style="font-size:.7rem;color:var(--ink3)">'+esc(s.tag)+'</td>'
+    +'<td style="color:var(--ink3)">0.0%</td>'
+    +'<td style="color:#c62828;font-size:.75rem">Extinct</td></tr>'
+  ).join('');
+  document.getElementById('evo-survivors').innerHTML=
+    '<table class="lb-table" style="margin-top:.5rem"><thead><tr>'
+    +'<th>Strategy</th><th>Type</th><th>Final share</th><th>Status</th>'
+    +'</tr></thead><tbody>'+extinctRows+survivorRows+'</tbody></table>';
 }
 
 populateSelects();

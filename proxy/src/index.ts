@@ -32,7 +32,7 @@ app.post('/api/messages', async (c) => {
 })
 
 // Serve the HTML frontend from the parent directory
-app.use('/*', serveStatic({ root: '../' }))
+app.use('/*', serveStatic({ root: '../public/' }))
 
 const port = Number(process.env.PORT ?? 3000)
 serve({ fetch: app.fetch, port }, () =>
