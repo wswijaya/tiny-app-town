@@ -402,7 +402,7 @@ select.strat-sel:focus{outline:none;border-color:var(--accent2)}
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" integrity="sha384-rRoXxn2yHlrZYB587Ki9RO1tONhLdM6XfORg7Rw4uwH4/Fh/5nP7IUX91bkaKUgs" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 const S = [
   {name:"Tit-for-Tat",tag:"Reciprocator",desc:"Starts cooperative. Mirrors the opponent's last move exactly.",fn:(h)=>h.length===0?'C':h[h.length-1].them},
@@ -1273,7 +1273,7 @@ function renderEvoChart(history,total){
   const canvas=document.getElementById('evo-chart');
   canvas.width=Math.max(W,400);
   canvas.height=340;
-  evoChart=new Chart(canvas,{
+  try{evoChart=new Chart(canvas,{
     type:'line',
     data:{labels,datasets},
     options:{
@@ -1291,7 +1291,7 @@ function renderEvoChart(history,total){
         tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+'%'}}
       }
     }
-  });
+  })}catch(e){canvas.parentElement.innerHTML='<p style="padding:1rem;color:#c62828;font-size:.8rem">Chart error: '+e.message+'</p>';}
 
   // Survivors table
   const final=history[gens];
