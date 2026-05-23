@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Badge Forge — AI-powered SVG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f8fafc;
+      color: #1e293b;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+    /* Back nav */
+    #back-nav {
+      background: #2c2420;
+      padding: 8px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    #back-nav a {
+      color: #f7f4ef;
+      font-size: 12px;
+      font-family: system-ui, sans-serif;
+      text-decoration: none;
+      letter-spacing: 0.05em;
+      opacity: 0.8;
+    }
+    #back-nav a:hover { opacity: 1; }
+
+    /* App header */
+    #app-header {
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 13px 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #header-icon {
+      width: 26px;
+      height: 26px;
+      background: #2563eb;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    #header-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+    #header-pill {
+      font-size: 11px;
+      color: #94a3b8;
+      background: #f1f5f9;
+      padding: 2px 9px;
+      border-radius: 20px;
+      border: 1px solid #e2e8f0;
+      margin-left: 2px;
+    }
+
+    /* Main layout */
+    #layout {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      min-height: calc(100vh - 53px - 37px); /* subtract header + back-nav */
+    }
+
+    /* Sidebar */
+    #sidebar {
+      background: #ffffff;
+      border-right: 1px solid #e2e8f0;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 9px;
+    }
+
+    /* Quick-start chips */
+    #chips-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .chip {
+      font-size: 12px;
+      padding: 4px 11px;
+      border-radius: 20px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      color: #475569;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+    }
+    .chip:hover {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #1d4ed8;
+    }
+
+    /* Textarea */
+    #prompt-label { margin-bottom: 8px; }
+    #prompt {
+      width: 100%;
+      min-height: 118px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      color: #1e293b;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 10px 13px;
+      resize: vertical;
+      line-height: 1.6;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    #prompt:focus { border-color: #93c5fd; }
+    #prompt-hint { font-size: 10px; color: #94a3b8; margin-top: 5px; }
+
+    /* Generate button */
+    #generate-btn {
+      padding: 11px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s;
+      cursor: pointer;
+    }
+    #generate-btn:not(:disabled) {
+      background: #2563eb;
+      color: #ffffff;
+    }
+    #generate-btn:not(:disabled):hover { background: #1d4ed8; }
+    #generate-btn:disabled {
+      background: #e2e8f0;
+      color: #94a3b8;
+      cursor: not-allowed;
+    }
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    /* Error box */
+    #error-box {
+      display: none;
+      font-size: 12px;
+      color: #b91c1c;
+      padding: 10px 13px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 7px;
+      line-height: 1.5;
+    }
+    #error-box.visible { display: block; }
+    #toggle-debug-btn {
+      display: block;
+      margin-top: 6px;
+      font-size: 11px;
+      color: #6b7280;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+      font-family: inherit;
+    }
+
+    /* Debug pre */
+    #debug-pre {
+      display: none;
+      font-size: 10px;
+      color: #475569;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px;
+      overflow: auto;
+      max-height: 150px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin: 0;
+      font-family: monospace;
+    }
+    #debug-pre.visible { display: block; }
+
+    /* History */
+    #history-section { display: none; }
+    #history-section.visible { display: block; }
+    #history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .history-item {
+      text-align: left;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background 0.12s, border-color 0.12s;
+      font-family: inherit;
+    }
+    .history-item:hover {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+    .history-thumb {
+      flex-shrink: 0;
+      line-height: 0;
+      max-width: 64px;
+      overflow: hidden;
+    }
+    .history-thumb svg {
+      max-width: 64px;
+      max-height: 36px;
+    }
+    .history-label {
+      font-size: 11px;
+      color: #64748b;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Right panel */
+    #right-panel {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Preview area */
+    #preview-area {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      min-height: 280px;
+      background: #f3f4f6;
+      transition: background 0.3s;
+    }
+    #preview-content { max-width: 85%; line-height: 0; }
+    #preview-content svg { max-width: 100%; }
+    #preview-empty { text-align: center; }
+    #preview-empty-icon { font-size: 38px; margin-bottom: 10px; opacity: 0.1; }
+    #preview-empty-text { font-size: 13px; color: #94a3b8; }
+    #preview-empty-hint { font-size: 11px; color: #cbd5e1; margin-top: 5px; }
+
+    /* Background switchers */
+    #bg-switchers {
+      position: absolute;
+      bottom: 14px;
+      right: 16px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    #bg-label { font-size: 10px; color: #94a3b8; margin-right: 3px; }
+    .bg-swatch {
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      border: 1.5px solid #cbd5e1;
+      cursor: pointer;
+      padding: 0;
+      outline: none;
+      transition: border 0.12s;
+      flex-shrink: 0;
+    }
+    .bg-swatch.active { border: 2px solid #2563eb; }
+
+    /* SVG source panel */
+    #source-panel {
+      display: none;
+      border-top: 1px solid #e2e8f0;
+      background: #ffffff;
+      max-height: 46%;
+      flex-direction: column;
+    }
+    #source-panel.visible { display: flex; }
+    #source-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 18px;
+      border-bottom: 1px solid #f1f5f9;
+      flex-shrink: 0;
+    }
+    #source-toolbar-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    #source-actions { display: flex; gap: 7px; }
+    .source-btn {
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      color: #475569;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 500;
+      transition: background 0.15s, color 0.15s;
+    }
+    #copy-btn.copied {
+      background: #f0fdf4;
+      color: #16a34a;
+    }
+    #download-btn:hover {
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+    #source-code {
+      flex: 1;
+      overflow: auto;
+      margin: 0;
+      padding: 14px 18px;
+      font-size: 11px;
+      line-height: 1.65;
+      color: #334155;
+      font-family: 'Fira Code', 'Cascadia Code', monospace;
+      white-space: pre-wrap;
+      word-break: break-all;
+      background: #f8fafc;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="back-nav">
+    <a href="/">← Tiny App Town</a>
+  </div>
+
+  <div id="app-header">
+    <div id="header-icon">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="1" y="4" width="5" height="6" rx="1.5" fill="white" opacity="0.65"/>
+        <rect x="8" y="4" width="5" height="6" rx="1.5" fill="white"/>
+      </svg>
+    </div>
+    <span id="header-title">Badge Forge</span>
+    <span id="header-pill">AI-powered SVG</span>
+  </div>
+
+  <div id="layout">
+
+    <div id="sidebar">
+
+      <div>
+        <div class="section-label">Quick start</div>
+        <div id="chips-wrap"></div>
+      </div>
+
+      <div>
+        <div class="section-label" id="prompt-label">Describe your badge</div>
+        <textarea
+          id="prompt"
+          placeholder="e.g. A 'Python Expert' achievement badge with dark navy and gold, flat design, small snake icon on the left…"
+        ></textarea>
+        <div id="prompt-hint">⌘↵ to generate</div>
+      </div>
+
+      <button id="generate-btn" disabled>✦ Generate badge</button>
+
+      <div id="error-box">
+        <span id="error-text"></span>
+        <button id="toggle-debug-btn" style="display:none">show raw API response</button>
+      </div>
+
+      <pre id="debug-pre"></pre>
+
+      <div id="history-section">
+        <div class="section-label">Recent</div>
+        <div id="history-list"></div>
+      </div>
+
+    </div>
+
+    <div id="right-panel">
+
+      <div id="preview-area">
+        <div id="preview-content" style="display:none"></div>
+        <div id="preview-empty">
+          <div id="preview-empty-icon">◈</div>
+          <div id="preview-empty-text">Badge preview appears here</div>
+          <div id="preview-empty-hint">Pick a quick start or write a prompt on the left</div>
+        </div>
+        <div id="bg-switchers">
+          <span id="bg-label">bg</span>
+        </div>
+      </div>
+
+      <div id="source-panel">
+        <div id="source-toolbar">
+          <span id="source-toolbar-label">SVG source</span>
+          <div id="source-actions">
+            <button id="copy-btn" class="source-btn">Copy SVG</button>
+            <button id="download-btn" class="source-btn">↓ Download .svg</button>
+          </div>
+        </div>
+        <pre id="source-code"></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ── Data ──────────────────────────────────────────────────────────────────
+
+    const QUICK_PROMPTS = [
+      { label: "build | passing", value: "GitHub-style flat badge: label 'build', value 'passing', green right panel, dark grey left panel, shields.io style" },
+      { label: "Python Expert", value: "Achievement badge for 'Python Expert', dark navy and gold color scheme, flat design, small snake icon on the left" },
+      { label: "Top Contributor", value: "Gold shield achievement badge for 'Top Contributor' with a star emblem, rich gold and deep brown tones, gamification style" },
+      { label: "100% Organic", value: "E-commerce certification label '100% Organic', green and earthy tones, small leaf icon, rounded rectangle, bold text" },
+      { label: "license | MIT", value: "GitHub-style flat badge: label 'license', value 'MIT', blue right panel, shields.io style" },
+      { label: "version | v2.4.1", value: "GitHub-style flat badge: label 'version', value 'v2.4.1', teal right panel, shields.io style" },
+      { label: "Certified Pro", value: "Professional certification badge 'Certified Pro', deep blue and silver, shield shape with checkmark icon" },
+      { label: "New Arrival", value: "E-commerce 'New Arrival' label, vibrant coral and white, pill shape, bold sans-serif text" },
+    ];
+
+    const BG_OPTIONS = [
+      { label: "White", value: "#ffffff" },
+      { label: "Light grey", value: "#f3f4f6" },
+      { label: "Dark", value: "#1e293b" },
+      { label: "Checker", value: "checker" },
+    ];
+
+    const SYSTEM_PROMPT = `You are an SVG badge designer. Your response must contain ONLY a raw SVG element — nothing else.
+
+CRITICAL FORMAT RULES (violations break the parser):
+- Do NOT use markdown code fences or backticks
+- Do NOT write any explanation, preamble, or postamble
+- Your entire response is ONE SVG element: it begins with <svg and ends with </svg>
+- No text before <svg, no text after </svg>
+
+Badge design rules:
+- GitHub flat badge style (shields.io): two rounded-rect panels side-by-side, rx="3", height="20". Left panel: dark grey (#555), right panel: colored. Text: font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11" fill="#fff". Add shadow text 1px below each label.
+- Achievement badges: SVG path for shield or star shape, height 60-100px, gradient fills in defs.
+- E-commerce labels: rounded rect, bold text, optional simple icon path.
+- Icons: draw as simple inline path elements. No external image refs.
+- Always include: xmlns="http://www.w3.org/2000/svg", viewBox, explicit width and height.
+- Always add a title element as first child of svg.
+- Gradients go in defs, referenced with fill="url(#id)".
+
+Remember: output ONLY the SVG. First character of your response must be '<', last must be '>'.`;
+
+    // ── State ─────────────────────────────────────────────────────────────────
+
+    let currentSvg = '';
+    let history = [];
+    let currentBg = '#f3f4f6';
+    let loading = false;
+    let rawResponse = '';
+    let showDebug = false;
+    let copied = false;
+
+    // ── DOM refs ──────────────────────────────────────────────────────────────
+
+    const promptEl       = document.getElementById('prompt');
+    const generateBtn    = document.getElementById('generate-btn');
+    const errorBox       = document.getElementById('error-box');
+    const errorText      = document.getElementById('error-text');
+    const toggleDebugBtn = document.getElementById('toggle-debug-btn');
+    const debugPre       = document.getElementById('debug-pre');
+    const historySection = document.getElementById('history-section');
+    const historyList    = document.getElementById('history-list');
+    const previewArea    = document.getElementById('preview-area');
+    const previewContent = document.getElementById('preview-content');
+    const previewEmpty   = document.getElementById('preview-empty');
+    const sourcePanel    = document.getElementById('source-panel');
+    const sourceCode     = document.getElementById('source-code');
+    const copyBtn        = document.getElementById('copy-btn');
+    const downloadBtn    = document.getElementById('download-btn');
+    const bgSwitchers    = document.getElementById('bg-switchers');
+    const chipsWrap      = document.getElementById('chips-wrap');
+
+    // ── extractSVG (verbatim from source) ─────────────────────────────────────
+
+    function extractSVG(raw) {
+      let cleaned = raw.replace(/```[\w]*\n?/g, "").replace(/```/g, "").trim();
+      const start = cleaned.search(/<svg[\s>]/i);
+      if (start === -1) return null;
+      let depth = 0;
+      let i = start;
+      while (i < cleaned.length) {
+        const lo = cleaned.toLowerCase();
+        const openIdx = lo.indexOf("<svg", i);
+        const closeIdx = lo.indexOf("</svg>", i);
+        if (closeIdx === -1) return null;
+        if (openIdx !== -1 && openIdx < closeIdx) {
+          depth++;
+          i = openIdx + 4;
+        } else {
+          depth--;
+          i = closeIdx + 6;
+          if (depth === 0) return cleaned.slice(start, i);
+        }
+      }
+      return null;
+    }
+
+    // ── Build chips ───────────────────────────────────────────────────────────
+
+    QUICK_PROMPTS.forEach(q => {
+      const btn = document.createElement('button');
+      btn.className = 'chip';
+      btn.textContent = q.label;
+      btn.addEventListener('click', () => {
+        promptEl.value = q.value;
+        promptEl.focus();
+        updateGenerateBtn();
+      });
+      chipsWrap.appendChild(btn);
+    });
+
+    // ── Build background swatches ─────────────────────────────────────────────
+
+    BG_OPTIONS.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'bg-swatch' + (opt.value === currentBg ? ' active' : '');
+      btn.title = opt.label;
+      if (opt.value === 'checker') {
+        btn.style.backgroundImage = 'repeating-conic-gradient(#cbd5e1 0% 25%, #f8fafc 0% 50%)';
+        btn.style.backgroundSize = '8px 8px';
+      } else {
+        btn.style.background = opt.value;
+      }
+      btn.addEventListener('click', () => {
+        currentBg = opt.value;
+        applyBg();
+        document.querySelectorAll('.bg-swatch').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+      });
+      bgSwitchers.appendChild(btn);
+    });
+
+    function applyBg() {
+      if (currentBg === 'checker') {
+        previewArea.style.backgroundImage = 'repeating-conic-gradient(#cbd5e1 0% 25%, #f8fafc 0% 50%)';
+        previewArea.style.backgroundSize = '16px 16px';
+        previewArea.style.background = '';
+      } else {
+        previewArea.style.backgroundImage = '';
+        previewArea.style.backgroundSize = '';
+        previewArea.style.background = currentBg;
+      }
+    }
+
+    // ── Generate button state ─────────────────────────────────────────────────
+
+    function updateGenerateBtn() {
+      const isEmpty = !promptEl.value.trim();
+      generateBtn.disabled = loading || isEmpty;
+    }
+
+    promptEl.addEventListener('input', updateGenerateBtn);
+
+    // ── Keyboard shortcut ─────────────────────────────────────────────────────
+
+    promptEl.addEventListener('keydown', e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        generateBadge();
+      }
+    });
+
+    // ── Generate ──────────────────────────────────────────────────────────────
+
+    async function generateBadge() {
+      const prompt = promptEl.value.trim();
+      if (!prompt || loading) return;
+
+      loading = true;
+      rawResponse = '';
+      showDebug = false;
+      updateGenerateBtn();
+
+      generateBtn.innerHTML = '<span class="spinner"></span>Generating…';
+
+      errorBox.classList.remove('visible');
+      errorText.textContent = '';
+      toggleDebugBtn.style.display = 'none';
+      debugPre.classList.remove('visible');
+      debugPre.textContent = '';
+
+      try {
+        const res = await fetch('/api/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-6',
+            max_tokens: 1500,
+            system: SYSTEM_PROMPT,
+            messages: [
+              { role: 'user', content: `Create an SVG badge for: ${prompt}` },
+            ],
+          }),
+        });
+
+        const data = await res.json();
+
+        if (data.error) {
+          showError(`API error: ${data.error.message}`, '');
+          finishLoading();
+          return;
+        }
+
+        rawResponse = (data.content || []).map(b => b.text || '').join('');
+
+        const svg = extractSVG(rawResponse);
+        if (svg) {
+          currentSvg = svg;
+          renderPreview();
+          addToHistory(prompt, svg);
+        } else {
+          showError('Could not extract valid SVG — try rephrasing your prompt.', rawResponse);
+          showDebug = true;
+          debugPre.textContent = rawResponse;
+          debugPre.classList.add('visible');
+          toggleDebugBtn.textContent = 'hide raw API response';
+        }
+      } catch (e) {
+        showError(`Request failed: ${e.message}`, '');
+      }
+
+      finishLoading();
+    }
+
+    function finishLoading() {
+      loading = false;
+      generateBtn.innerHTML = '✦ Generate badge';
+      updateGenerateBtn();
+    }
+
+    function showError(msg, raw) {
+      errorText.textContent = msg;
+      errorBox.classList.add('visible');
+      if (raw) {
+        toggleDebugBtn.style.display = 'block';
+        toggleDebugBtn.textContent = 'show raw API response';
+      } else {
+        toggleDebugBtn.style.display = 'none';
+      }
+    }
+
+    generateBtn.addEventListener('click', generateBadge);
+
+    // ── Debug toggle ──────────────────────────────────────────────────────────
+
+    toggleDebugBtn.addEventListener('click', () => {
+      showDebug = !showDebug;
+      if (showDebug) {
+        debugPre.textContent = rawResponse;
+        debugPre.classList.add('visible');
+        toggleDebugBtn.textContent = 'hide raw API response';
+      } else {
+        debugPre.classList.remove('visible');
+        toggleDebugBtn.textContent = 'show raw API response';
+      }
+    });
+
+    // ── Preview rendering ─────────────────────────────────────────────────────
+
+    function renderPreview() {
+      previewContent.innerHTML = currentSvg;
+      previewContent.style.display = 'block';
+      previewEmpty.style.display = 'none';
+      sourcePanel.classList.add('visible');
+      sourceCode.textContent = currentSvg;
+    }
+
+    function clearPreview() {
+      previewContent.innerHTML = '';
+      previewContent.style.display = 'none';
+      previewEmpty.style.display = 'block';
+      sourcePanel.classList.remove('visible');
+      sourceCode.textContent = '';
+    }
+
+    // ── History ───────────────────────────────────────────────────────────────
+
+    function addToHistory(prompt, svg) {
+      history = [{ prompt, svg, id: Date.now() }, ...history.slice(0, 7)];
+      renderHistory();
+    }
+
+    function renderHistory() {
+      if (history.length === 0) {
+        historySection.classList.remove('visible');
+        return;
+      }
+      historySection.classList.add('visible');
+      historyList.innerHTML = '';
+      history.forEach(item => {
+        const btn = document.createElement('button');
+        btn.className = 'history-item';
+
+        const thumb = document.createElement('span');
+        thumb.className = 'history-thumb';
+        thumb.innerHTML = item.svg;
+
+        const label = document.createElement('span');
+        label.className = 'history-label';
+        label.textContent = item.prompt.slice(0, 52) + (item.prompt.length > 52 ? '…' : '');
+
+        btn.appendChild(thumb);
+        btn.appendChild(label);
+
+        btn.addEventListener('click', () => {
+          currentSvg = item.svg;
+          promptEl.value = item.prompt;
+          updateGenerateBtn();
+          errorBox.classList.remove('visible');
+          debugPre.classList.remove('visible');
+          showDebug = false;
+          renderPreview();
+        });
+
+        historyList.appendChild(btn);
+      });
+    }
+
+    // ── Copy SVG ──────────────────────────────────────────────────────────────
+
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(currentSvg).then(() => {
+        copyBtn.textContent = '✓ Copied!';
+        copyBtn.classList.add('copied');
+        setTimeout(() => {
+          copyBtn.textContent = 'Copy SVG';
+          copyBtn.classList.remove('copied');
+        }, 1800);
+      });
+    });
+
+    // ── Download SVG ──────────────────────────────────────────────────────────
+
+    downloadBtn.addEventListener('click', () => {
+      const blob = new Blob([currentSvg], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'badge.svg';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+
+    applyBg();
+    updateGenerateBtn();
+  </script>
+</body>
+</html>
