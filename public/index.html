@@ -1231,21 +1231,24 @@ async function runEvolution(){
 
 function renderEvoChart(history){
   const gens=history.length-1;
+  const n=S.length;
+  const startShare=1/n;
   const labels=Array.from({length:gens+1},(_,i)=>'Gen '+i);
   const palette=['#8b4513','#1565c0','#2e7d32','#6a1b9a','#e65100',
     '#00695c','#c62828','#37474f','#f57f17','#283593'];
 
-  // Rank by final share, break ties by peak
-  const ranked=S.map((s,i)=>({
+  // Annotate every strategy with final share + max deviation from starting equal share
+  const allStrats=S.map((s,i)=>({
     i,name:s.name,tag:s.tag,
     final:history[gens][i],
-    peak:Math.max(...history.map(h=>h[i]))
-  })).filter(s=>s.peak>0.0001).sort((a,b)=>b.final-a.final||b.peak-a.peak);
+    maxDev:Math.max(...history.map(h=>Math.abs(h[i]-startShare)))
+  })).sort((a,b)=>b.final-a.final);
 
-  const top=ranked.slice(0,10);
-  const rest=ranked.slice(10).map(s=>s.i);
+  // Chart: top 10 by max deviation — shows the most interesting movers (winners AND notable losers)
+  const chartStrats=allStrats.slice().sort((a,b)=>b.maxDev-a.maxDev).slice(0,10);
+  const flatCount=n-chartStrats.length;
 
-  const datasets=top.map((s,idx)=>({
+  const datasets=chartStrats.map((s,idx)=>({
     label:s.name,
     data:history.map(h=>+(h[s.i]*100).toFixed(1)),
     borderColor:palette[idx%palette.length],
@@ -1253,23 +1256,30 @@ function renderEvoChart(history){
     borderWidth:2,pointRadius:0,tension:.3
   }));
 
-  if(rest.length>0) datasets.push({
-    label:'Others ('+rest.length+')',
-    data:history.map(h=>+(rest.reduce((a,i)=>a+h[i],0)*100).toFixed(1)),
-    borderColor:'#ccc',backgroundColor:'transparent',
-    borderWidth:1,borderDash:[4,4],pointRadius:0,tension:.3
-  });
-
   const chartWrap=document.getElementById('evo-chart-wrap');
   chartWrap.style.display='block';
-  const W=chartWrap.offsetWidth-42; // reading offsetWidth forces synchronous reflow
+  const W=chartWrap.offsetWidth-42;
   if(evoChart){evoChart.destroy();evoChart=null;}
   const canvas=document.getElementById('evo-chart');
   canvas.width=Math.max(W,400);
   canvas.height=340;
+
+  const flatNote=flatCount>0
+    ?{id:'flatNote',afterDraw(chart){
+        const ctx=chart.ctx;
+        ctx.save();
+        ctx.font='11px sans-serif';
+        ctx.fillStyle='#9e9e9e';
+        ctx.textAlign='right';
+        ctx.fillText(flatCount+' near-flat strateg'+(flatCount===1?'y':'ies')+' hidden',chart.width-8,chart.height-4);
+        ctx.restore();
+      }}
+    :null;
+
   try{evoChart=new Chart(canvas,{
     type:'line',
     data:{labels,datasets},
+    plugins:flatNote?[flatNote]:[],
     options:{
       responsive:false,
       interaction:{mode:'index',intersect:false},
@@ -1287,25 +1297,26 @@ function renderEvoChart(history){
     }
   })}catch(e){canvas.parentElement.innerHTML='<p style="padding:1rem;color:#c62828;font-size:.8rem">Chart error: '+e.message+'</p>';}
 
-  // Survivors table
-  const final=history[gens];
-  const alive=ranked.filter(s=>final[s.i]>=0.001);
-  const extinct=ranked.filter(s=>final[s.i]<0.001).length;
-  const rows=alive.map((s,idx)=>{
-    const pct=(final[s.i]*100).toFixed(1);
+  // Survivors table — sorted by final share
+  const alive=allStrats.filter(s=>s.final>=0.001);
+  const extinct=allStrats.filter(s=>s.final<0.001);
+  const survivorRows=alive.map((s,idx)=>{
+    const pct=(s.final*100).toFixed(1);
     return'<tr class="'+(idx===0?'top-r':'')+'"><td><span class="rank">#'+(idx+1)+'</span>'+esc(s.name)+'</td>'
       +'<td style="font-size:.7rem;color:var(--ink3)">'+esc(s.tag)+'</td>'
       +'<td>'+pct+'%</td>'
       +'<td style="color:var(--accent);font-size:.75rem">Survived</td></tr>';
   }).join('');
-  const extinctRow=extinct>0
-    ?'<tr><td colspan="4" style="text-align:center;color:var(--ink3);font-size:.75rem;padding:.5rem">'
-      +extinct+' strateg'+(extinct===1?'y':'ies')+' went extinct</td></tr>'
-    :'';
+  const extinctRows=extinct.map(s=>
+    '<tr><td style="color:var(--ink3)">'+esc(s.name)+'</td>'
+    +'<td style="font-size:.7rem;color:var(--ink3)">'+esc(s.tag)+'</td>'
+    +'<td style="color:var(--ink3)">0.0%</td>'
+    +'<td style="color:#c62828;font-size:.75rem">Extinct</td></tr>'
+  ).join('');
   document.getElementById('evo-survivors').innerHTML=
     '<table class="lb-table" style="margin-top:.5rem"><thead><tr>'
     +'<th>Strategy</th><th>Type</th><th>Final share</th><th>Status</th>'
-    +'</tr></thead><tbody>'+rows+extinctRow+'</tbody></table>';
+    +'</tr></thead><tbody>'+survivorRows+extinctRows+'</tbody></table>';
 }
 
 populateSelects();
