@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cron Tool — Tiny App Town</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f4ef;
+    --surface: #ffffff;
+    --surface2: #f0ede6;
+    --accent: #8b4513;
+    --ink: #2c2420;
+    --ink2: #5a4a3a;
+    --ink3: #8a7a6a;
+    --ink4: #b8a898;
+    --border: rgba(90,75,55,0.15);
+    --border2: rgba(90,75,55,0.25);
+    --serif: Lora, Georgia, serif;
+    --sans: system-ui, -apple-system, sans-serif;
+    --mono: ui-monospace, 'SF Mono', Consolas, monospace;
+  }
+
+  body { font-family: var(--sans); background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.6; }
+
+  .back-nav { background: var(--ink); padding: 8px 20px; position: sticky; top: 0; z-index: 100; }
+  .back-nav a { color: #f7f4ef; font-size: 12px; text-decoration: none; letter-spacing: 0.05em; opacity: 0.8; }
+  .back-nav a:hover { opacity: 1; }
+
+  .page { max-width: 860px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+  .masthead { margin-bottom: 2rem; }
+  .eyebrow { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink3); margin-bottom: 8px; }
+  h1 { font-family: var(--serif); font-size: 2.2rem; font-weight: 400; color: var(--ink); line-height: 1.2; margin-bottom: 0.5rem; }
+  .tagline { font-size: 14px; color: var(--ink3); line-height: 1.7; }
+
+  hr.divider { border: none; border-top: 0.5px solid var(--border2); margin: 1.5rem 0; }
+
+  /* Tabs */
+  .tabs { display: flex; border-bottom: 1px solid var(--border2); margin-bottom: 2rem; }
+  .tab-btn {
+    background: none; border: none; border-bottom: 2px solid transparent;
+    padding: 0.6rem 1.25rem; font-size: 13px; font-family: var(--sans);
+    color: var(--ink3); cursor: pointer; margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s; letter-spacing: 0.03em;
+  }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+
+  /* Field grid */
+  .fields-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem; }
+
+  .field-card { background: var(--surface); border: 0.5px solid var(--border2); border-radius: 8px; padding: 1rem 1.1rem 1.1rem; }
+
+  .field-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.6rem; }
+  .field-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink4); font-weight: 500; }
+  .field-range { font-size: 11px; color: var(--ink4); font-family: var(--mono); }
+
+  .mode-row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 0.6rem; }
+  .mode-pill {
+    font-size: 11px; color: var(--ink3); cursor: pointer;
+    padding: 2px 8px; border-radius: 4px; border: 0.5px solid var(--border2);
+    background: var(--surface2); transition: background 0.1s, border-color 0.1s, color 0.1s;
+    user-select: none;
+  }
+  .mode-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .field-sub { font-size: 13px; color: var(--ink2); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-height: 26px; }
+
+  .num-input {
+    border: 0.5px solid var(--border2); border-radius: 4px;
+    padding: 3px 7px; font-size: 13px; font-family: var(--mono);
+    background: var(--surface2); color: var(--ink); width: 64px;
+  }
+  .text-input {
+    border: 0.5px solid var(--border2); border-radius: 4px;
+    padding: 3px 8px; font-size: 13px; font-family: var(--mono);
+    background: var(--surface2); color: var(--ink); width: 140px;
+  }
+  .named-select {
+    border: 0.5px solid var(--border2); border-radius: 4px;
+    padding: 3px 7px; font-size: 12px;
+    background: var(--surface2); color: var(--ink); max-width: 120px;
+  }
+
+  /* Toggle pills for specific month / dow */
+  .tog-pill {
+    font-size: 11px; cursor: pointer; padding: 2px 7px; border-radius: 3px;
+    border: 0.5px solid var(--border2); background: var(--surface2);
+    color: var(--ink3); transition: background 0.1s, color 0.1s, border-color 0.1s;
+    user-select: none;
+  }
+  .tog-pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* Result card */
+  .result-card { background: var(--surface); border: 0.5px solid var(--border2); border-radius: 8px; padding: 1.25rem 1.5rem; }
+
+  .expr-display { font-family: var(--mono); font-size: 1.5rem; color: var(--ink); letter-spacing: 0.08em; margin-bottom: 0.4rem; word-break: break-all; }
+  .expr-meaning { font-size: 14px; color: var(--ink2); margin-bottom: 1rem; line-height: 1.5; }
+  .expr-meaning.muted { color: var(--ink3); }
+  .expr-meaning.error { color: #c0392b; }
+
+  .runs-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink4); margin-bottom: 0.4rem; }
+  .run-row { font-size: 13px; color: var(--ink2); font-family: var(--mono); padding: 4px 0; border-bottom: 0.5px solid var(--border); }
+  .run-row:last-child { border-bottom: none; }
+  .run-row.empty { color: var(--ink4); font-family: var(--sans); font-size: 12px; }
+
+  /* Copy button */
+  .expr-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.4rem; }
+  .copy-btn {
+    font-size: 11px; padding: 2px 8px; border-radius: 4px;
+    border: 0.5px solid var(--border2); background: var(--surface2);
+    color: var(--ink3); cursor: pointer; font-family: var(--sans);
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Explainer tab */
+  .expr-input {
+    width: 100%; font-family: var(--mono); font-size: 1.1rem;
+    padding: 0.75rem 1rem; border: 0.5px solid var(--border2); border-radius: 8px;
+    background: var(--surface); color: var(--ink); outline: none;
+    transition: border-color 0.15s; margin-bottom: 4px;
+  }
+  .expr-input:focus { border-color: var(--accent); }
+  .input-hint { font-size: 11px; color: var(--ink4); margin-bottom: 1.25rem; }
+
+  /* Cheat sheet */
+  .cheat { margin-top: 2rem; }
+  .section-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink4); margin-bottom: 0.75rem; }
+
+  .cheat-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 1.25rem; }
+  .cheat-table th { text-align: left; padding: 5px 10px; color: var(--ink3); border-bottom: 0.5px solid var(--border2); font-weight: 500; font-size: 11px; letter-spacing: 0.05em; }
+  .cheat-table td { padding: 5px 10px; color: var(--ink2); border-bottom: 0.5px solid var(--border); vertical-align: top; }
+  .cheat-table td:first-child { font-family: var(--mono); color: var(--accent); white-space: nowrap; }
+
+  .specials { font-size: 12px; color: var(--ink3); line-height: 1.8; margin-bottom: 1.25rem; }
+  .specials code { font-family: var(--mono); color: var(--accent); background: var(--surface2); padding: 1px 4px; border-radius: 3px; }
+
+  .examples-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.5rem; }
+  .example-card {
+    background: var(--surface); border: 0.5px solid var(--border); border-radius: 6px;
+    padding: 0.6rem 0.9rem; cursor: pointer; transition: border-color 0.15s;
+  }
+  .example-card:hover { border-color: var(--accent); }
+  .example-expr { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+  .example-desc { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+
+  @media (max-width: 480px) {
+    h1 { font-size: 1.8rem; }
+    .fields-grid { grid-template-columns: 1fr; }
+    .page { padding: 2rem 1rem 4rem; }
+    .expr-display { font-size: 1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="back-nav">
+  <a href="/">← Tiny App Town</a>
+</div>
+
+<div class="page">
+  <div class="masthead">
+    <div class="eyebrow">Tiny App Town</div>
+    <h1>Cron Tool</h1>
+    <p class="tagline">Build cron schedules visually, or paste any expression to see it in plain English with the next 5 run times.</p>
+  </div>
+
+  <hr class="divider">
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="generator">Generator</button>
+    <button class="tab-btn" data-tab="explainer">Explainer</button>
+  </div>
+
+  <!-- ── GENERATOR ── -->
+  <div id="tab-generator">
+    <div class="fields-grid" id="fields-grid">
+      <!-- field cards injected by JS -->
+    </div>
+
+    <div class="result-card">
+      <div class="expr-row">
+        <div class="expr-display" id="gen-expr">* * * * *</div>
+        <button class="copy-btn" id="copy-btn">Copy</button>
+      </div>
+      <div class="expr-meaning" id="gen-meaning"></div>
+      <div class="runs-label">Next 5 runs</div>
+      <div id="gen-runs"></div>
+    </div>
+  </div>
+
+  <!-- ── EXPLAINER ── -->
+  <div id="tab-explainer" style="display:none">
+    <input type="text" class="expr-input" id="exp-input"
+           placeholder="0 9 * * 1-5"
+           spellcheck="false" autocomplete="off">
+    <div class="input-hint">Enter a 5-field cron expression — minute hour day month weekday</div>
+
+    <div class="result-card" id="exp-result">
+      <div class="expr-meaning muted" id="exp-meaning">Enter a cron expression above to decode it.</div>
+      <div class="runs-label" id="exp-runs-label" style="display:none">Next 5 runs</div>
+      <div id="exp-runs"></div>
+    </div>
+
+    <div class="cheat">
+      <div class="section-label">Fields</div>
+      <table class="cheat-table">
+        <thead><tr><th>Field</th><th>Range</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>minute</td><td>0–59</td><td>0 = top of the hour</td></tr>
+          <tr><td>hour</td><td>0–23</td><td>0 = midnight</td></tr>
+          <tr><td>day of month</td><td>1–31</td><td>Not all months have 31 days</td></tr>
+          <tr><td>month</td><td>1–12</td><td>1 = January</td></tr>
+          <tr><td>day of week</td><td>0–6</td><td>0 = Sunday, 6 = Saturday</td></tr>
+        </tbody>
+      </table>
+
+      <div class="section-label">Special characters</div>
+      <div class="specials">
+        <code>*</code> any value &nbsp;·&nbsp;
+        <code>*/n</code> every nth value &nbsp;·&nbsp;
+        <code>a-b</code> range from a to b &nbsp;·&nbsp;
+        <code>a,b</code> list of values &nbsp;·&nbsp;
+        <code>a/n</code> start at a, step n
+      </div>
+
+      <div class="section-label">
+        Common examples
+        <span style="font-size:10px;color:var(--ink4);text-transform:none;letter-spacing:0;margin-left:6px">click to load</span>
+      </div>
+      <div class="examples-grid" id="examples-grid"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONSTANTS ─────────────────────────────────────────────────────────────────
+
+const MONTHS = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTHS_SHORT = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+const EXAMPLES = [
+  { expr: '* * * * *',          desc: 'Every minute' },
+  { expr: '*/5 * * * *',        desc: 'Every 5 minutes' },
+  { expr: '0 * * * *',          desc: 'Every hour' },
+  { expr: '0 9 * * *',          desc: 'Daily at 9:00 AM' },
+  { expr: '0 9 * * 1-5',        desc: 'Weekdays at 9:00 AM' },
+  { expr: '30 6 * * 1-5',       desc: 'Weekdays at 6:30 AM' },
+  { expr: '0 0 * * 0',          desc: 'Every Sunday at midnight' },
+  { expr: '0 0 1 * *',          desc: '1st of every month at midnight' },
+  { expr: '0 0 1 1 *',          desc: 'Annually on January 1st' },
+  { expr: '0 12 * * 3',         desc: 'Every Wednesday at noon' },
+  { expr: '0 0,12 * * *',       desc: 'Twice daily — midnight & noon' },
+  { expr: '*/15 9-17 * * 1-5',  desc: 'Every 15 min, business hours' },
+];
+
+// ── FIELD CONFIG ──────────────────────────────────────────────────────────────
+
+const FIELDS = [
+  {
+    id: 'min', label: 'Minute', range: '0–59',
+    vmin: 0, vmax: 59, defStep: 5, defVals: '0', defLo: 0, defHi: 30,
+    modes: ['every','interval','specific','range'],
+    unit: 'minutes', placeholder: 'e.g. 0,15,30,45',
+  },
+  {
+    id: 'hr', label: 'Hour', range: '0–23',
+    vmin: 0, vmax: 23, defStep: 2, defVals: '9', defLo: 9, defHi: 17,
+    modes: ['every','interval','specific','range'],
+    unit: 'hours', placeholder: 'e.g. 9,12,17',
+  },
+  {
+    id: 'dom', label: 'Day of Month', range: '1–31',
+    vmin: 1, vmax: 31, defStep: 1, defVals: '1', defLo: 1, defHi: 15,
+    modes: ['every','interval','specific','range'],
+    unit: 'days', placeholder: 'e.g. 1,15',
+  },
+  {
+    id: 'mon', label: 'Month', range: '1–12',
+    vmin: 1, vmax: 12, defStep: 1, defVals: '1', defLo: 1, defHi: 6,
+    modes: ['every','specific','range'],
+    unit: 'months', placeholder: 'e.g. 1,6,12',
+    toggles: MONTHS_SHORT.slice(1),
+  },
+  {
+    id: 'dow', label: 'Day of Week', range: '0=Sun…6=Sat',
+    vmin: 0, vmax: 6, defStep: 1, defVals: '1', defLo: 1, defHi: 5,
+    modes: ['every','specific','range'],
+    unit: 'days', placeholder: 'e.g. 1,3,5',
+    toggles: DAYS_SHORT,
+  },
+];
+
+// Generator state
+const G = {};
+FIELDS.forEach(cfg => {
+  G[cfg.id] = { mode: 'every', step: cfg.defStep, vals: cfg.defVals, lo: cfg.defLo, hi: cfg.defHi };
+});
+
+// ── CRON LOGIC ────────────────────────────────────────────────────────────────
+
+function parseField(field, vmin, vmax) {
+  const values = new Set();
+  for (const part of field.split(',')) {
+    const p = part.trim();
+    if (p === '*') {
+      for (let i = vmin; i <= vmax; i++) values.add(i);
+    } else if (/^\*\/(\d+)$/.test(p)) {
+      const step = parseInt(p.slice(2));
+      if (step > 0) for (let i = vmin; i <= vmax; i += step) values.add(i);
+    } else if (/^(\d+)\/(\d+)$/.test(p)) {
+      const m = p.match(/^(\d+)\/(\d+)$/);
+      for (let i = parseInt(m[1]); i <= vmax; i += parseInt(m[2])) values.add(i);
+    } else if (/^(\d+)-(\d+)$/.test(p)) {
+      const [lo, hi] = p.split('-').map(Number);
+      for (let i = lo; i <= hi; i++) values.add(i);
+    } else if (/^\d+$/.test(p)) {
+      values.add(parseInt(p));
+    }
+  }
+  return values;
+}
+
+function nextRuns(expr, count = 5) {
+  try {
+    const parts = expr.trim().split(/\s+/);
+    if (parts.length !== 5) return null;
+    const [minF, hrF, domF, monF, dowF] = parts;
+
+    const vMins = parseField(minF, 0, 59);
+    const vHrs  = parseField(hrF,  0, 23);
+    const vDoms = parseField(domF, 1, 31);
+    const vMons = parseField(monF, 1, 12);
+    const vDows = parseField(dowF, 0, 6);
+
+    const domStar = domF === '*';
+    const dowStar = dowF === '*';
+
+    const results = [];
+    const now = new Date();
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes() + 1, 0, 0);
+
+    for (let iters = 0; results.length < count && iters < 527040; iters++) {
+      const mo  = d.getMonth() + 1;
+      const dom = d.getDate();
+      const dow = d.getDay();
+      const hr  = d.getHours();
+      const mn  = d.getMinutes();
+
+      if (!vMons.has(mo)) { d.setMonth(d.getMonth() + 1); d.setDate(1); d.setHours(0); d.setMinutes(0); continue; }
+
+      let dayOk;
+      if (domStar && dowStar) dayOk = true;
+      else if (domStar)       dayOk = vDows.has(dow);
+      else if (dowStar)       dayOk = vDoms.has(dom);
+      else                    dayOk = vDoms.has(dom) || vDows.has(dow);
+
+      if (!dayOk)        { d.setDate(d.getDate() + 1); d.setHours(0); d.setMinutes(0); continue; }
+      if (!vHrs.has(hr)) { d.setHours(d.getHours() + 1); d.setMinutes(0); continue; }
+      if (!vMins.has(mn)){ d.setMinutes(d.getMinutes() + 1); continue; }
+
+      results.push(new Date(d));
+      d.setMinutes(d.getMinutes() + 1);
+    }
+    return results;
+  } catch { return null; }
+}
+
+function formatRunDate(d) {
+  const h = d.getHours(), m = d.getMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hh = h % 12 || 12;
+  const mm = m.toString().padStart(2, '0');
+  return `${DAYS_SHORT[d.getDay()]}, ${MONTHS_SHORT[d.getMonth()+1]} ${d.getDate()} ${d.getFullYear()}  ${hh}:${mm} ${ampm}`;
+}
+
+function fmt12(h, m) {
+  h = parseInt(h); m = parseInt(m);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  return `${h % 12 || 12}:${m.toString().padStart(2,'0')} ${ampm}`;
+}
+
+function ordinal(n) {
+  n = parseInt(n);
+  const s = ['th','st','nd','rd'], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+function joinList(arr) {
+  if (arr.length === 1) return arr[0];
+  if (arr.length === 2) return arr[0] + ' and ' + arr[1];
+  return arr.slice(0, -1).join(', ') + ', and ' + arr[arr.length - 1];
+}
+
+function describeCron(expr) {
+  const parts = expr.trim().split(/\s+/);
+  if (parts.length !== 5) return null;
+  const [minF, hrF, domF, monF, dowF] = parts;
+
+  if (parts.every(f => f === '*')) return 'Runs every minute';
+
+  // Time description
+  let timeStr;
+  if (/^\d+$/.test(minF) && /^\d+$/.test(hrF)) {
+    timeStr = 'at ' + fmt12(hrF, minF);
+  } else if (minF === '0' && hrF === '*') {
+    timeStr = 'every hour';
+  } else if (/^\*\/(\d+)$/.test(minF) && hrF === '*') {
+    const n = minF.slice(2);
+    timeStr = `every ${n} minute${n !== '1' ? 's' : ''}`;
+  } else if (/^\*\/(\d+)$/.test(minF) && /^\d+-\d+$/.test(hrF)) {
+    const n = minF.slice(2);
+    const [lo, hi] = hrF.split('-').map(Number);
+    timeStr = `every ${n} minute${n !== '1' ? 's' : ''} between ${fmt12(lo, 0)} and ${fmt12(hi, 59)}`;
+  } else if (/^\d+$/.test(minF) && hrF === '*') {
+    timeStr = `every hour at :${minF.padStart(2, '0')}`;
+  } else if (/^\*\/(\d+)$/.test(hrF) && minF === '0') {
+    const n = hrF.slice(2);
+    timeStr = `every ${n} hour${n !== '1' ? 's' : ''}`;
+  } else if (/^\d+(,\d+)+$/.test(hrF) && /^\d+$/.test(minF)) {
+    const times = hrF.split(',').map(h => fmt12(h, minF));
+    timeStr = 'at ' + joinList(times);
+  } else {
+    timeStr = `minute ${minF}, hour ${hrF}`;
+  }
+
+  // Day of week
+  let dowStr = null;
+  if (dowF !== '*') {
+    if (dowF === '1-5') dowStr = 'on weekdays';
+    else if (dowF === '0,6' || dowF === '6,0') dowStr = 'on weekends';
+    else if (/^\d+$/.test(dowF)) dowStr = 'on ' + DAYS[parseInt(dowF)];
+    else if (/^\d+-\d+$/.test(dowF)) {
+      const [lo, hi] = dowF.split('-').map(Number);
+      dowStr = `${DAYS[lo]} through ${DAYS[hi]}`;
+    } else {
+      dowStr = 'on ' + joinList(dowF.split(',').map(d => DAYS[parseInt(d)]));
+    }
+  }
+
+  // Day of month
+  let domStr = null;
+  if (domF !== '*') {
+    if (/^\d+$/.test(domF)) domStr = `on the ${ordinal(domF)}`;
+    else if (/^\d+-\d+$/.test(domF)) { const [lo, hi] = domF.split('-'); domStr = `on days ${lo}–${hi}`; }
+    else domStr = `on days ${domF}`;
+  }
+
+  // Month
+  let monStr = null;
+  if (monF !== '*') {
+    if (/^\d+$/.test(monF)) monStr = MONTHS[parseInt(monF)];
+    else if (/^\d+-\d+$/.test(monF)) {
+      const [lo, hi] = monF.split('-').map(Number);
+      monStr = `${MONTHS[lo]} through ${MONTHS[hi]}`;
+    } else {
+      monStr = joinList(monF.split(',').map(m => MONTHS_SHORT[parseInt(m)]));
+    }
+  }
+
+  // Compose
+  const pieces = [timeStr];
+  if (dowStr) pieces.push(dowStr);
+  if (domStr) {
+    if (monStr) pieces.push(`${domStr} of ${monStr}`);
+    else pieces.push(domStr);
+  } else if (monStr) {
+    pieces.push('in ' + monStr);
+  }
+
+  const raw = pieces.filter(Boolean).join(', ');
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
+// ── GENERATOR UI ─────────────────────────────────────────────────────────────
+
+function fieldToExpr(id) {
+  const s = G[id];
+  switch (s.mode) {
+    case 'every':    return '*';
+    case 'interval': return '*/' + s.step;
+    case 'specific': return s.vals || '0';
+    case 'range':    return s.lo + '-' + s.hi;
+    default:         return '*';
+  }
+}
+
+function getExpr() {
+  return ['min','hr','dom','mon','dow'].map(fieldToExpr).join(' ');
+}
+
+function renderSub(id) {
+  const cfg = FIELDS.find(f => f.id === id);
+  const s = G[id];
+  const sub = document.getElementById(id + '-sub');
+
+  sub.innerHTML = '';
+
+  if (s.mode === 'every') return;
+
+  if (s.mode === 'interval') {
+    const span = document.createElement('span');
+    span.textContent = 'Every';
+    const inp = document.createElement('input');
+    inp.type = 'number'; inp.className = 'num-input';
+    inp.value = s.step; inp.min = 1; inp.max = cfg.vmax;
+    inp.addEventListener('input', () => { G[id].step = Math.max(1, parseInt(inp.value) || 1); updateGen(); });
+    const unit = document.createElement('span');
+    unit.textContent = cfg.unit;
+    sub.append(span, inp, unit);
+    return;
+  }
+
+  if (s.mode === 'specific') {
+    if (cfg.toggles) {
+      const selected = new Set(s.vals.split(',').map(Number));
+      cfg.toggles.forEach((name, i) => {
+        const v = cfg.vmin + i;
+        const pill = document.createElement('span');
+        pill.className = 'tog-pill' + (selected.has(v) ? ' on' : '');
+        pill.textContent = name;
+        pill.dataset.val = v;
+        pill.addEventListener('click', () => {
+          const cur = new Set(G[id].vals.split(',').map(Number));
+          if (cur.has(v)) { cur.delete(v); if (cur.size === 0) cur.add(v); }
+          else cur.add(v);
+          G[id].vals = [...cur].sort((a, b) => a - b).join(',');
+          pill.classList.toggle('on', cur.has(v));
+          updateGen();
+        });
+        sub.appendChild(pill);
+      });
+    } else {
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.className = 'text-input';
+      inp.value = s.vals; inp.placeholder = cfg.placeholder;
+      inp.addEventListener('input', () => { G[id].vals = inp.value.trim() || cfg.vmin.toString(); updateGen(); });
+      sub.appendChild(inp);
+    }
+    return;
+  }
+
+  if (s.mode === 'range') {
+    if (cfg.toggles) {
+      const mkSel = (selectedVal) => {
+        const sel = document.createElement('select');
+        sel.className = 'named-select';
+        cfg.toggles.forEach((name, i) => {
+          const v = cfg.vmin + i;
+          const opt = document.createElement('option');
+          opt.value = v; opt.textContent = name;
+          if (v === selectedVal) opt.selected = true;
+          sel.appendChild(opt);
+        });
+        return sel;
+      };
+      const selLo = mkSel(s.lo);
+      const selHi = mkSel(s.hi);
+      const to = document.createElement('span'); to.textContent = 'to';
+      selLo.addEventListener('change', () => { G[id].lo = parseInt(selLo.value); updateGen(); });
+      selHi.addEventListener('change', () => { G[id].hi = parseInt(selHi.value); updateGen(); });
+      sub.append(selLo, to, selHi);
+    } else {
+      const mkNum = (val) => {
+        const inp = document.createElement('input');
+        inp.type = 'number'; inp.className = 'num-input';
+        inp.value = val; inp.min = cfg.vmin; inp.max = cfg.vmax;
+        return inp;
+      };
+      const inpLo = mkNum(s.lo);
+      const inpHi = mkNum(s.hi);
+      const to = document.createElement('span'); to.textContent = 'to';
+      inpLo.addEventListener('input', () => { G[id].lo = parseInt(inpLo.value) || cfg.vmin; updateGen(); });
+      inpHi.addEventListener('input', () => { G[id].hi = parseInt(inpHi.value) || cfg.vmax; updateGen(); });
+      sub.append(inpLo, to, inpHi);
+    }
+  }
+}
+
+function updateGen() {
+  const expr = getExpr();
+  document.getElementById('gen-expr').textContent = expr;
+
+  const desc = describeCron(expr);
+  document.getElementById('gen-meaning').textContent = desc || '';
+
+  const runs = nextRuns(expr);
+  const runsEl = document.getElementById('gen-runs');
+  if (runs && runs.length > 0) {
+    runsEl.innerHTML = runs.map(d => `<div class="run-row">${formatRunDate(d)}</div>`).join('');
+  } else {
+    runsEl.innerHTML = '<div class="run-row empty">No runs found in the next year</div>';
+  }
+}
+
+function buildFieldCards() {
+  const grid = document.getElementById('fields-grid');
+  FIELDS.forEach(cfg => {
+    const card = document.createElement('div');
+    card.className = 'field-card';
+
+    const header = document.createElement('div');
+    header.className = 'field-header';
+    header.innerHTML = `<span class="field-label">${cfg.label}</span><span class="field-range">${cfg.range}</span>`;
+
+    const modeRow = document.createElement('div');
+    modeRow.className = 'mode-row';
+    cfg.modes.forEach(mode => {
+      const pill = document.createElement('span');
+      pill.className = 'mode-pill' + (mode === 'every' ? ' active' : '');
+      pill.textContent = mode === 'every' ? 'Every' : mode === 'interval' ? 'Every N' : mode.charAt(0).toUpperCase() + mode.slice(1);
+      pill.addEventListener('click', () => {
+        G[cfg.id].mode = mode;
+        modeRow.querySelectorAll('.mode-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        renderSub(cfg.id);
+        updateGen();
+      });
+      modeRow.appendChild(pill);
+    });
+
+    const sub = document.createElement('div');
+    sub.className = 'field-sub';
+    sub.id = cfg.id + '-sub';
+
+    card.append(header, modeRow, sub);
+    grid.appendChild(card);
+  });
+}
+
+// ── EXPLAINER ─────────────────────────────────────────────────────────────────
+
+function updateExplainer() {
+  const val = document.getElementById('exp-input').value.trim();
+  const meaningEl = document.getElementById('exp-meaning');
+  const runsEl = document.getElementById('exp-runs');
+  const runsLabel = document.getElementById('exp-runs-label');
+
+  if (!val) {
+    meaningEl.className = 'expr-meaning muted';
+    meaningEl.textContent = 'Enter a cron expression above to decode it.';
+    runsLabel.style.display = 'none';
+    runsEl.innerHTML = '';
+    return;
+  }
+
+  if (val.trim().split(/\s+/).length !== 5) {
+    meaningEl.className = 'expr-meaning error';
+    meaningEl.textContent = 'Invalid — expected 5 space-separated fields';
+    runsLabel.style.display = 'none';
+    runsEl.innerHTML = '';
+    return;
+  }
+
+  const desc = describeCron(val);
+  if (!desc) {
+    meaningEl.className = 'expr-meaning error';
+    meaningEl.textContent = 'Could not parse this expression';
+    runsLabel.style.display = 'none';
+    runsEl.innerHTML = '';
+    return;
+  }
+
+  meaningEl.className = 'expr-meaning';
+  meaningEl.textContent = desc;
+
+  const runs = nextRuns(val);
+  runsLabel.style.display = '';
+  if (runs && runs.length > 0) {
+    runsEl.innerHTML = runs.map(d => `<div class="run-row">${formatRunDate(d)}</div>`).join('');
+  } else {
+    runsEl.innerHTML = '<div class="run-row empty">No runs found in the next year</div>';
+  }
+}
+
+function loadExample(expr) {
+  document.getElementById('exp-input').value = expr;
+  updateExplainer();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+  buildFieldCards();
+  updateGen();
+
+  document.getElementById('exp-input').addEventListener('input', updateExplainer);
+
+  document.getElementById('copy-btn').addEventListener('click', () => {
+    navigator.clipboard.writeText(document.getElementById('gen-expr').textContent).then(() => {
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+    });
+  });
+
+  // Tab switching
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+      document.getElementById('tab-generator').style.display = tab === 'generator' ? '' : 'none';
+      document.getElementById('tab-explainer').style.display = tab === 'explainer' ? '' : 'none';
+    });
+  });
+
+  // Examples grid
+  const grid = document.getElementById('examples-grid');
+  EXAMPLES.forEach(e => {
+    const card = document.createElement('div');
+    card.className = 'example-card';
+    card.innerHTML = `<div class="example-expr">${e.expr}</div><div class="example-desc">${e.desc}</div>`;
+    card.addEventListener('click', () => {
+      loadExample(e.expr);
+      // Switch to explainer tab
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === 'explainer'));
+      document.getElementById('tab-generator').style.display = 'none';
+      document.getElementById('tab-explainer').style.display = '';
+    });
+    grid.appendChild(card);
+  });
+});
+</script>
+</body>
+</html>
