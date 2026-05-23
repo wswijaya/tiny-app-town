@@ -771,7 +771,7 @@ async function optimiseDescription(){
   const prompt='You are helping design a Prisoner\'s Dilemma strategy persona. The user has described a persona called "'+( name||'unnamed')+'" with archetype "'+(tag||'unknown')+'".\n\nTheir description: "'+desc+'"\n\nRewrite this as a sharp, precise persona description for a Prisoner\'s Dilemma player. The description should:\n- Be 2-3 sentences maximum\n- Clearly convey the decision-making philosophy (when to cooperate, when to defect, how they respond to betrayal)\n- Be written in third person, present tense\n- Have a slightly literary, aphoristic quality\n- Not mention "Prisoner\'s Dilemma" explicitly\n\nReturn ONLY the rewritten description. No preamble, no explanation, no quotes.';
   try{
     const resp=await fetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,stream:true,messages:[{role:'user',content:prompt}]})});
-    if(!resp.ok)throw new Error('API '+resp.status);
+    if(!resp.ok){const e=await resp.text();throw new Error('API '+resp.status+': '+e);}
     const reader=resp.body.getReader();const dec=new TextDecoder();let buf='';
     while(true){
       const{done,value}=await reader.read();if(done)break;
@@ -995,7 +995,7 @@ DECISION: DEFECT`;
       messages:[{role:'user',content:prompt}]
     })
   });
-  if(!resp.ok)throw new Error('API '+resp.status);
+  if(!resp.ok){const e=await resp.text();throw new Error('API '+resp.status+': '+e);}
   const data=await resp.json();
   const text=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
   const match=text.match(/DECISION:\s*(COOPERATE|DEFECT)/i);
