@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CSS Effects Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f8fafc;
+      color: #1e293b;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+    /* Back nav */
+    #back-nav {
+      background: #2c2420;
+      padding: 8px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    #back-nav a {
+      color: #f7f4ef;
+      font-size: 12px;
+      font-family: system-ui, sans-serif;
+      text-decoration: none;
+      letter-spacing: 0.05em;
+      opacity: 0.8;
+    }
+    #back-nav a:hover { opacity: 1; }
+
+    /* App header */
+    #app-header {
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 13px 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #header-icon {
+      width: 26px;
+      height: 26px;
+      background: #2563eb;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    #header-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+    #header-pill {
+      font-size: 11px;
+      color: #94a3b8;
+      background: #f1f5f9;
+      padding: 2px 9px;
+      border-radius: 20px;
+      border: 1px solid #e2e8f0;
+      margin-left: 2px;
+    }
+
+    /* Tab bar */
+    #tab-bar {
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0 20px;
+      display: flex;
+    }
+    .tab-btn {
+      padding: 10px 16px;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: #94a3b8;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      font-weight: 500;
+      transition: color 0.12s, border-color 0.12s;
+    }
+    .tab-btn.active {
+      color: #2563eb;
+      border-bottom-color: #2563eb;
+      font-weight: 600;
+    }
+
+    /* Tab panels */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: flex; height: calc(100vh - 37px - 53px - 41px); }
+
+    /* Shared layout */
+    .sidebar {
+      width: 360px;
+      flex-shrink: 0;
+      background: #ffffff;
+      border-right: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .sidebar-inner {
+      padding: 18px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .right-panel {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background: #f3f4f6;
+      transition: background 0.3s;
+      overflow: hidden;
+    }
+
+    /* Section label */
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    /* Shadow layer card */
+    .shadow-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px;
+      background: #fff;
+      margin-bottom: 10px;
+    }
+    .shadow-card:last-child { margin-bottom: 0; }
+    .shadow-card-header {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 12px;
+    }
+    .shadow-color-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    .shadow-card-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #1e293b;
+      flex: 1;
+    }
+    .inset-badge {
+      font-size: 10px;
+      background: #f1f5f9;
+      color: #64748b;
+      padding: 1px 6px;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+    }
+    .delete-layer-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #cbd5e1;
+      font-size: 16px;
+      line-height: 1;
+      padding: 0 2px;
+      font-family: inherit;
+      transition: color 0.12s;
+    }
+    .delete-layer-btn:hover { color: #ef4444; }
+
+    /* Sliders grid */
+    .sliders-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 12px;
+      margin-bottom: 10px;
+    }
+    .slider-field { display: flex; flex-direction: column; gap: 3px; }
+    .slider-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .slider-label {
+      font-size: 10px;
+      color: #64748b;
+      font-weight: 500;
+    }
+    .slider-value {
+      font-size: 12px;
+      color: #2563eb;
+      font-family: monospace;
+      font-weight: 600;
+    }
+    input[type="range"] {
+      width: 100%;
+      height: 4px;
+      accent-color: #2563eb;
+      cursor: pointer;
+      margin: 0;
+    }
+
+    /* Color + opacity row */
+    .color-opacity-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    input[type="color"] {
+      width: 32px;
+      height: 28px;
+      border: 1px solid #e2e8f0;
+      border-radius: 5px;
+      padding: 1px;
+      cursor: pointer;
+      background: none;
+      flex-shrink: 0;
+    }
+    .opacity-label {
+      font-size: 10px;
+      color: #64748b;
+      white-space: nowrap;
+    }
+    .opacity-value {
+      font-size: 12px;
+      color: #2563eb;
+      font-family: monospace;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .opacity-slider { flex: 1; }
+
+    /* Inset toggle */
+    .inset-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .inset-row input[type="checkbox"] {
+      accent-color: #2563eb;
+      cursor: pointer;
+      width: 14px;
+      height: 14px;
+    }
+    .inset-row label {
+      font-size: 12px;
+      color: #475569;
+      cursor: pointer;
+    }
+
+    /* Add layer button */
+    #add-shadow-btn {
+      width: 100%;
+      padding: 9px;
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 8px;
+      background: none;
+      color: #94a3b8;
+      font-size: 12px;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      transition: border-color 0.12s, color 0.12s, background 0.12s;
+    }
+    #add-shadow-btn:hover {
+      border-color: #2563eb;
+      color: #2563eb;
+      background: #eff6ff;
+    }
+    #add-shadow-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      border-color: #cbd5e1;
+      color: #94a3b8;
+      background: none;
+    }
+
+    /* CSS output section */
+    .css-output-section {
+      border-top: 1px solid #f1f5f9;
+      padding-top: 14px;
+      margin-top: 4px;
+    }
+    .css-pre {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 11px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin: 0 0 8px 0;
+      color: #334155;
+      line-height: 1.6;
+    }
+    .copy-btn {
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      color: #475569;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 500;
+      transition: background 0.15s, color 0.15s;
+    }
+    .copy-btn:hover { background: #eff6ff; color: #1d4ed8; }
+    .copy-btn.copied { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+
+    /* Background switchers */
+    .bg-switchers {
+      position: absolute;
+      bottom: 14px;
+      right: 16px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .bg-label { font-size: 10px; color: #94a3b8; margin-right: 3px; }
+    .bg-swatch {
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      border: 1.5px solid #cbd5e1;
+      cursor: pointer;
+      padding: 0;
+      outline: none;
+      transition: border 0.12s;
+      flex-shrink: 0;
+    }
+    .bg-swatch.active { border: 2.5px solid #2563eb; }
+
+    /* Box shadow preview element */
+    #bs-preview-card {
+      width: 160px;
+      height: 100px;
+      border-radius: 12px;
+      background: #ffffff;
+      transition: box-shadow 0.15s;
+    }
+    #bs-preview-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    #bs-preview-label {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    /* Gradient tab — type pills */
+    .type-pills {
+      display: flex;
+      gap: 6px;
+    }
+    .type-pill {
+      flex: 1;
+      padding: 7px 0;
+      border-radius: 7px;
+      border: none;
+      font-size: 12px;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      background: #f1f5f9;
+      color: #475569;
+      transition: background 0.12s, color 0.12s;
+    }
+    .type-pill.active {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    /* Angle row */
+    .angle-row { display: flex; flex-direction: column; gap: 4px; }
+    .angle-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .angle-label { font-size: 12px; color: #64748b; font-weight: 500; }
+    .angle-value { font-size: 12px; color: #2563eb; font-family: monospace; font-weight: 600; }
+
+    /* Radial shape */
+    .shape-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .shape-row label {
+      font-size: 12px;
+      color: #475569;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .shape-row input[type="radio"] {
+      accent-color: #2563eb;
+      cursor: pointer;
+    }
+
+    /* Color stops */
+    .stop-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 7px;
+    }
+    .stop-row input[type="color"] {
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+      padding: 2px;
+      cursor: pointer;
+      background: none;
+    }
+    .stop-position {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      flex: 1;
+    }
+    .stop-position input[type="number"] {
+      width: 52px;
+      padding: 5px 7px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: inherit;
+      color: #1e293b;
+      background: #f8fafc;
+      outline: none;
+      transition: border-color 0.12s;
+    }
+    .stop-position input[type="number"]:focus { border-color: #93c5fd; }
+    .stop-position-pct { font-size: 12px; color: #94a3b8; }
+    .delete-stop-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #cbd5e1;
+      font-size: 15px;
+      line-height: 1;
+      padding: 0 2px;
+      font-family: inherit;
+      transition: color 0.12s;
+    }
+    .delete-stop-btn:hover { color: #ef4444; }
+
+    #add-stop-btn {
+      width: 100%;
+      padding: 7px;
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 8px;
+      background: none;
+      color: #94a3b8;
+      font-size: 12px;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      transition: border-color 0.12s, color 0.12s, background 0.12s;
+    }
+    #add-stop-btn:hover {
+      border-color: #2563eb;
+      color: #2563eb;
+      background: #eff6ff;
+    }
+    #add-stop-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      border-color: #cbd5e1;
+      color: #94a3b8;
+      background: none;
+    }
+
+    /* Preset swatches */
+    .presets-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+    }
+    .preset-swatch {
+      height: 30px;
+      border-radius: 5px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.12s, transform 0.1s;
+      position: relative;
+    }
+    .preset-swatch:hover {
+      border-color: #2563eb;
+      transform: scale(1.03);
+    }
+    .preset-swatch-label {
+      font-size: 10px;
+      color: rgba(255,255,255,0.9);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+      position: absolute;
+      bottom: 3px;
+      left: 5px;
+      font-weight: 600;
+      pointer-events: none;
+    }
+
+    /* Gradient preview overlay pill */
+    #grad-css-pill {
+      position: absolute;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.45);
+      color: #fff;
+      font-size: 11px;
+      font-family: monospace;
+      padding: 6px 12px;
+      border-radius: 20px;
+      max-width: 90%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="back-nav">
+    <a href="/">← Tiny App Town</a>
+  </div>
+
+  <div id="app-header">
+    <div id="header-icon">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <rect x="1" y="5" width="7" height="5" rx="1.5" fill="white" opacity="0.55"/>
+        <rect x="4" y="3" width="11" height="7" rx="1.5" fill="none" stroke="white" stroke-width="1.2" opacity="0.7"/>
+        <rect x="1" y="5" width="9" height="6" rx="1.5" fill="white" opacity="0.9"/>
+      </svg>
+    </div>
+    <span id="header-title">CSS Effects Studio</span>
+    <span id="header-pill">Visual builder</span>
+  </div>
+
+  <!-- Tab bar -->
+  <div id="tab-bar">
+    <button class="tab-btn active" data-tab="box-shadow">Box Shadow</button>
+    <button class="tab-btn" data-tab="gradient">Gradient</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       TAB 1 — Box Shadow
+  ═══════════════════════════════════════════════════ -->
+  <div class="tab-panel active" id="tab-box-shadow">
+
+    <div class="sidebar">
+      <div class="sidebar-inner">
+
+        <div>
+          <div class="section-label">Shadow layers</div>
+          <div id="shadow-layers-list"></div>
+          <button id="add-shadow-btn">+ Add shadow layer</button>
+        </div>
+
+        <div class="css-output-section">
+          <div class="section-label">Generated CSS</div>
+          <pre class="css-pre" id="bs-css-output"></pre>
+          <button class="copy-btn" id="bs-copy-btn">Copy</button>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="right-panel" id="bs-right-panel">
+      <div id="bs-preview-wrap">
+        <div id="bs-preview-card"></div>
+        <div id="bs-preview-label">Preview element</div>
+      </div>
+      <div class="bg-switchers" id="bs-bg-switchers">
+        <span class="bg-label">bg</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       TAB 2 — Gradient
+  ═══════════════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-gradient">
+
+    <div class="sidebar">
+      <div class="sidebar-inner">
+
+        <div>
+          <div class="section-label">Type</div>
+          <div class="type-pills">
+            <button class="type-pill active" data-type="linear">Linear</button>
+            <button class="type-pill" data-type="radial">Radial</button>
+            <button class="type-pill" data-type="conic">Conic</button>
+          </div>
+        </div>
+
+        <div id="grad-angle-section" class="angle-row">
+          <div class="angle-top">
+            <span class="angle-label">Angle</span>
+            <span class="angle-value" id="grad-angle-display">135°</span>
+          </div>
+          <input type="range" id="grad-angle-slider" min="0" max="360" value="135" />
+        </div>
+
+        <div id="grad-shape-section" style="display:none">
+          <div class="section-label" style="margin-bottom:6px">Shape</div>
+          <div class="shape-row">
+            <label><input type="radio" name="grad-shape" value="circle" /> Circle</label>
+            <label><input type="radio" name="grad-shape" value="ellipse" checked /> Ellipse</label>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">Color stops</div>
+          <div id="grad-stops-list"></div>
+          <button id="add-stop-btn">+ Add stop</button>
+        </div>
+
+        <div>
+          <div class="section-label">Presets</div>
+          <div class="presets-grid" id="presets-grid"></div>
+        </div>
+
+        <div class="css-output-section">
+          <div class="section-label">Generated CSS</div>
+          <pre class="css-pre" id="grad-css-output"></pre>
+          <button class="copy-btn" id="grad-copy-btn">Copy</button>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="right-panel" id="grad-right-panel" style="background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%)">
+      <div id="grad-css-pill"></div>
+      <div class="bg-switchers">
+        <!-- empty spacer to keep bg-switchers div in layout, gradient tab has no bg swatches -->
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ══════════════════════════════════════════════════════════════════════
+    // UTILITIES
+    // ══════════════════════════════════════════════════════════════════════
+
+    function hexToRgba(hex, alpha) {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r},${g},${b},${alpha.toFixed(2)})`;
+    }
+
+    function buildBoxShadow(layers) {
+      return layers.map(l => {
+        const rgba = hexToRgba(l.color, l.opacity / 100);
+        return `${l.inset ? 'inset ' : ''}${l.x}px ${l.y}px ${l.blur}px ${l.spread}px ${rgba}`;
+      }).join(',\n        ');
+    }
+
+    function buildGradient(state) {
+      const stops = state.stops.map(s => `${s.color} ${s.position}%`).join(', ');
+      if (state.type === 'linear') return `linear-gradient(${state.angle}deg, ${stops})`;
+      if (state.type === 'radial') return `radial-gradient(${state.shape} at center, ${stops})`;
+      if (state.type === 'conic')  return `conic-gradient(from ${state.angle}deg, ${stops})`;
+    }
+
+    function setupCopyBtn(btn, getText) {
+      btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(getText()).then(() => {
+          btn.textContent = '✓ Copied!';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.textContent = 'Copy';
+            btn.classList.remove('copied');
+          }, 1800);
+        });
+      });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // TAB SWITCHING
+    // ══════════════════════════════════════════════════════════════════════
+
+    const tabBtns   = document.querySelectorAll('.tab-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.tab;
+        tabBtns.forEach(b => b.classList.toggle('active', b === btn));
+        tabPanels.forEach(p => p.classList.toggle('active', p.id === 'tab-' + target));
+      });
+    });
+
+    // ══════════════════════════════════════════════════════════════════════
+    // BOX SHADOW TAB
+    // ══════════════════════════════════════════════════════════════════════
+
+    let bsLayers = [
+      { id: 1, x: 0, y: 4, blur: 12, spread: 0, color: '#1e293b', opacity: 20, inset: false }
+    ];
+    let bsNextId = 2;
+
+    const bsLayersList  = document.getElementById('shadow-layers-list');
+    const bsAddBtn      = document.getElementById('add-shadow-btn');
+    const bsCssOutput   = document.getElementById('bs-css-output');
+    const bsCopyBtn     = document.getElementById('bs-copy-btn');
+    const bsPreviewCard = document.getElementById('bs-preview-card');
+    const bsRightPanel  = document.getElementById('bs-right-panel');
+    const bsBgSwitchers = document.getElementById('bs-bg-switchers');
+
+    let bsBg = '#f3f4f6';
+
+    // Background swatches for box shadow
+    const BG_OPTIONS = [
+      { label: 'White',       value: '#ffffff' },
+      { label: 'Light grey',  value: '#f3f4f6' },
+      { label: 'Dark',        value: '#1e293b' },
+      { label: 'Checker',     value: 'checker' },
+    ];
+
+    BG_OPTIONS.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'bg-swatch' + (opt.value === bsBg ? ' active' : '');
+      btn.title = opt.label;
+      if (opt.value === 'checker') {
+        btn.style.backgroundImage = 'repeating-conic-gradient(#cbd5e1 0% 25%, #f8fafc 0% 50%)';
+        btn.style.backgroundSize = '8px 8px';
+      } else {
+        btn.style.background = opt.value;
+      }
+      btn.addEventListener('click', () => {
+        bsBg = opt.value;
+        applyBsBg();
+        document.querySelectorAll('#bs-bg-switchers .bg-swatch').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+      });
+      bsBgSwitchers.appendChild(btn);
+    });
+
+    function applyBsBg() {
+      if (bsBg === 'checker') {
+        bsRightPanel.style.backgroundImage = 'repeating-conic-gradient(#cbd5e1 0% 25%, #f8fafc 0% 50%)';
+        bsRightPanel.style.backgroundSize  = '16px 16px';
+        bsRightPanel.style.background      = '';
+      } else {
+        bsRightPanel.style.backgroundImage = '';
+        bsRightPanel.style.backgroundSize  = '';
+        bsRightPanel.style.background      = bsBg;
+      }
+    }
+
+    function bsRender() {
+      // Update add button
+      bsAddBtn.disabled = bsLayers.length >= 5;
+
+      // Render layer cards
+      bsLayersList.innerHTML = '';
+      bsLayers.forEach((layer, idx) => {
+        const card = document.createElement('div');
+        card.className = 'shadow-card';
+
+        // Header
+        const hdr = document.createElement('div');
+        hdr.className = 'shadow-card-header';
+
+        const dot = document.createElement('div');
+        dot.className = 'shadow-color-dot';
+        dot.style.background = hexToRgba(layer.color, layer.opacity / 100);
+
+        const lbl = document.createElement('span');
+        lbl.className = 'shadow-card-label';
+        lbl.textContent = `Shadow ${idx + 1}`;
+
+        const insetBadge = document.createElement('span');
+        insetBadge.className = 'inset-badge';
+        insetBadge.textContent = 'inset';
+        insetBadge.style.display = layer.inset ? '' : 'none';
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'delete-layer-btn';
+        delBtn.textContent = '×';
+        delBtn.title = 'Remove layer';
+        delBtn.style.display = bsLayers.length > 1 ? '' : 'none';
+        delBtn.addEventListener('click', () => {
+          bsLayers = bsLayers.filter(l => l.id !== layer.id);
+          bsRender();
+          bsUpdate();
+        });
+
+        hdr.append(dot, lbl, insetBadge, delBtn);
+
+        // Sliders grid
+        const grid = document.createElement('div');
+        grid.className = 'sliders-grid';
+
+        const sliderDefs = [
+          { key: 'x',      label: 'X Offset', min: -50,  max: 50,  suffix: 'px' },
+          { key: 'y',      label: 'Y Offset', min: -50,  max: 50,  suffix: 'px' },
+          { key: 'blur',   label: 'Blur',     min: 0,    max: 100, suffix: 'px' },
+          { key: 'spread', label: 'Spread',   min: -30,  max: 30,  suffix: 'px' },
+        ];
+
+        sliderDefs.forEach(def => {
+          const field = document.createElement('div');
+          field.className = 'slider-field';
+
+          const top = document.createElement('div');
+          top.className = 'slider-top';
+
+          const slLabel = document.createElement('span');
+          slLabel.className = 'slider-label';
+          slLabel.textContent = def.label;
+
+          const slValue = document.createElement('span');
+          slValue.className = 'slider-value';
+          slValue.textContent = layer[def.key] + def.suffix;
+
+          top.append(slLabel, slValue);
+
+          const slider = document.createElement('input');
+          slider.type = 'range';
+          slider.min  = def.min;
+          slider.max  = def.max;
+          slider.value = layer[def.key];
+          slider.addEventListener('input', () => {
+            layer[def.key] = Number(slider.value);
+            slValue.textContent = slider.value + def.suffix;
+            bsUpdate();
+          });
+
+          field.append(top, slider);
+          grid.appendChild(field);
+        });
+
+        // Color + opacity row
+        const colorRow = document.createElement('div');
+        colorRow.className = 'color-opacity-row';
+
+        const colorInput = document.createElement('input');
+        colorInput.type  = 'color';
+        colorInput.value = layer.color;
+        colorInput.addEventListener('input', () => {
+          layer.color = colorInput.value;
+          dot.style.background = hexToRgba(layer.color, layer.opacity / 100);
+          bsUpdate();
+        });
+
+        const opLabel = document.createElement('span');
+        opLabel.className = 'opacity-label';
+        opLabel.textContent = 'Opacity';
+
+        const opSlider = document.createElement('input');
+        opSlider.type  = 'range';
+        opSlider.min   = 0;
+        opSlider.max   = 100;
+        opSlider.value = layer.opacity;
+        opSlider.className = 'opacity-slider';
+
+        const opValue = document.createElement('span');
+        opValue.className = 'opacity-value';
+        opValue.textContent = layer.opacity + '%';
+
+        opSlider.addEventListener('input', () => {
+          layer.opacity = Number(opSlider.value);
+          opValue.textContent = opSlider.value + '%';
+          dot.style.background = hexToRgba(layer.color, layer.opacity / 100);
+          bsUpdate();
+        });
+
+        colorRow.append(colorInput, opLabel, opSlider, opValue);
+
+        // Inset toggle
+        const insetRow = document.createElement('div');
+        insetRow.className = 'inset-row';
+
+        const insetId  = `inset-${layer.id}`;
+        const checkbox = document.createElement('input');
+        checkbox.type  = 'checkbox';
+        checkbox.id    = insetId;
+        checkbox.checked = layer.inset;
+        checkbox.addEventListener('change', () => {
+          layer.inset = checkbox.checked;
+          insetBadge.style.display = layer.inset ? '' : 'none';
+          bsUpdate();
+        });
+
+        const insetLbl = document.createElement('label');
+        insetLbl.htmlFor   = insetId;
+        insetLbl.textContent = 'Inset';
+
+        insetRow.append(checkbox, insetLbl);
+
+        card.append(hdr, grid, colorRow, insetRow);
+        bsLayersList.appendChild(card);
+      });
+
+      applyBsBg();
+    }
+
+    function bsUpdate() {
+      const shadowVal = buildBoxShadow(bsLayers);
+      bsPreviewCard.style.boxShadow = shadowVal;
+      bsCssOutput.textContent = `box-shadow: ${shadowVal};`;
+    }
+
+    bsAddBtn.addEventListener('click', () => {
+      if (bsLayers.length >= 5) return;
+      bsLayers.push({ id: bsNextId++, x: 0, y: 4, blur: 12, spread: 0, color: '#1e293b', opacity: 20, inset: false });
+      bsRender();
+      bsUpdate();
+    });
+
+    setupCopyBtn(bsCopyBtn, () => bsCssOutput.textContent);
+
+    // Init box shadow
+    bsRender();
+    bsUpdate();
+
+    // ══════════════════════════════════════════════════════════════════════
+    // GRADIENT TAB
+    // ══════════════════════════════════════════════════════════════════════
+
+    const gradState = {
+      type:  'linear',
+      angle: 135,
+      shape: 'ellipse',
+      stops: [
+        { id: 1, color: '#6366f1', position: 0 },
+        { id: 2, color: '#ec4899', position: 100 },
+      ],
+    };
+    let gradNextId = 3;
+
+    const gradAngleSection  = document.getElementById('grad-angle-section');
+    const gradShapeSection  = document.getElementById('grad-shape-section');
+    const gradAngleSlider   = document.getElementById('grad-angle-slider');
+    const gradAngleDisplay  = document.getElementById('grad-angle-display');
+    const gradStopsList     = document.getElementById('grad-stops-list');
+    const addStopBtn        = document.getElementById('add-stop-btn');
+    const gradCssOutput     = document.getElementById('grad-css-output');
+    const gradCopyBtn       = document.getElementById('grad-copy-btn');
+    const gradRightPanel    = document.getElementById('grad-right-panel');
+    const gradCssPill       = document.getElementById('grad-css-pill');
+    const typePills         = document.querySelectorAll('.type-pill');
+    const presetsGrid       = document.getElementById('presets-grid');
+
+    const PRESETS = [
+      { name: 'Sunset',  stops: ['#f97316', '#ec4899'], angle: 135 },
+      { name: 'Ocean',   stops: ['#0ea5e9', '#6366f1'], angle: 180 },
+      { name: 'Forest',  stops: ['#22c55e', '#0d9488'], angle: 135 },
+      { name: 'Peach',   stops: ['#fbbf24', '#f87171'], angle: 90  },
+      { name: 'Night',   stops: ['#1e1b4b', '#312e81'], angle: 180 },
+      { name: 'Rose',    stops: ['#fda4af', '#c084fc'], angle: 45  },
+    ];
+
+    // Build preset swatches
+    PRESETS.forEach(preset => {
+      const swatch = document.createElement('div');
+      swatch.className = 'preset-swatch';
+      swatch.style.background = `linear-gradient(${preset.angle}deg, ${preset.stops[0]}, ${preset.stops[1]})`;
+      swatch.title = preset.name;
+
+      const lbl = document.createElement('span');
+      lbl.className = 'preset-swatch-label';
+      lbl.textContent = preset.name;
+      swatch.appendChild(lbl);
+
+      swatch.addEventListener('click', () => {
+        gradState.type  = 'linear';
+        gradState.angle = preset.angle;
+        gradState.stops = preset.stops.map((c, i) => ({
+          id: gradNextId++,
+          color: c,
+          position: i === 0 ? 0 : 100,
+        }));
+        // activate linear pill
+        typePills.forEach(p => p.classList.toggle('active', p.dataset.type === 'linear'));
+        gradAngleSection.style.display = '';
+        gradShapeSection.style.display = 'none';
+        gradAngleSlider.value = gradState.angle;
+        gradAngleDisplay.textContent = gradState.angle + '°';
+        gradRenderStops();
+        gradUpdate();
+      });
+
+      presetsGrid.appendChild(swatch);
+    });
+
+    // Type pills
+    typePills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        gradState.type = pill.dataset.type;
+        typePills.forEach(p => p.classList.toggle('active', p === pill));
+        gradAngleSection.style.display  = gradState.type !== 'radial' ? '' : 'none';
+        gradShapeSection.style.display  = gradState.type === 'radial' ? '' : 'none';
+        gradUpdate();
+      });
+    });
+
+    // Angle slider
+    gradAngleSlider.addEventListener('input', () => {
+      gradState.angle = Number(gradAngleSlider.value);
+      gradAngleDisplay.textContent = gradState.angle + '°';
+      gradUpdate();
+    });
+
+    // Shape radios
+    document.querySelectorAll('input[name="grad-shape"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        gradState.shape = radio.value;
+        gradUpdate();
+      });
+    });
+
+    function gradRenderStops() {
+      addStopBtn.disabled = gradState.stops.length >= 8;
+      gradStopsList.innerHTML = '';
+
+      gradState.stops.forEach(stop => {
+        const row = document.createElement('div');
+        row.className = 'stop-row';
+
+        const colorInput = document.createElement('input');
+        colorInput.type  = 'color';
+        colorInput.value = stop.color;
+        colorInput.addEventListener('input', () => {
+          stop.color = colorInput.value;
+          gradUpdate();
+        });
+
+        const posWrap = document.createElement('div');
+        posWrap.className = 'stop-position';
+
+        const posInput = document.createElement('input');
+        posInput.type  = 'number';
+        posInput.min   = 0;
+        posInput.max   = 100;
+        posInput.value = stop.position;
+        posInput.addEventListener('input', () => {
+          stop.position = Math.min(100, Math.max(0, Number(posInput.value) || 0));
+          gradUpdate();
+        });
+
+        const pctLabel = document.createElement('span');
+        pctLabel.className = 'stop-position-pct';
+        pctLabel.textContent = '%';
+
+        posWrap.append(posInput, pctLabel);
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'delete-stop-btn';
+        delBtn.textContent = '×';
+        delBtn.title = 'Remove stop';
+        delBtn.style.display = gradState.stops.length > 2 ? '' : 'none';
+        delBtn.addEventListener('click', () => {
+          gradState.stops = gradState.stops.filter(s => s.id !== stop.id);
+          gradRenderStops();
+          gradUpdate();
+        });
+
+        row.append(colorInput, posWrap, delBtn);
+        gradStopsList.appendChild(row);
+      });
+    }
+
+    addStopBtn.addEventListener('click', () => {
+      if (gradState.stops.length >= 8) return;
+      const maxPos = Math.max(...gradState.stops.map(s => s.position));
+      const newPos = Math.min(100, Math.round((maxPos + 100) / 2));
+      gradState.stops.push({ id: gradNextId++, color: '#ffffff', position: newPos });
+      gradRenderStops();
+      gradUpdate();
+    });
+
+    function gradUpdate() {
+      const val = buildGradient(gradState);
+      gradRightPanel.style.background = val;
+      gradCssOutput.textContent = `background: ${val};`;
+      gradCssPill.textContent = `background: ${val}`;
+    }
+
+    setupCopyBtn(gradCopyBtn, () => gradCssOutput.textContent);
+
+    // Init gradient
+    gradRenderStops();
+    gradUpdate();
+    applyBsBg();
+  </script>
+</body>
+</html>
