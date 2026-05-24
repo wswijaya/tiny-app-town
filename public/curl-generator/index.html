@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cURL Builder — Command generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f8fafc;
+      color: #1e293b;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+    /* Back nav */
+    #back-nav {
+      background: #2c2420;
+      padding: 8px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    #back-nav a {
+      color: #f7f4ef;
+      font-size: 12px;
+      font-family: system-ui, sans-serif;
+      text-decoration: none;
+      letter-spacing: 0.05em;
+      opacity: 0.8;
+    }
+    #back-nav a:hover { opacity: 1; }
+
+    /* App header */
+    #app-header {
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 13px 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #header-icon {
+      width: 26px;
+      height: 26px;
+      background: #2563eb;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    #header-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+    #header-pill {
+      font-size: 11px;
+      color: #94a3b8;
+      background: #f1f5f9;
+      padding: 2px 9px;
+      border-radius: 20px;
+      border: 1px solid #e2e8f0;
+      margin-left: 2px;
+    }
+
+    /* Main layout */
+    #layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      min-height: calc(100vh - 53px - 37px);
+    }
+
+    /* Sidebar */
+    #sidebar {
+      background: #ffffff;
+      border-right: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .sidebar-section {
+      padding: 16px 18px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .sidebar-section:last-child {
+      border-bottom: none;
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    /* Form elements */
+    label {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    input[type="text"],
+    input[type="url"],
+    input[type="number"],
+    input[type="password"],
+    select,
+    textarea {
+      width: 100%;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      color: #1e293b;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 7px 10px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input[type="text"]:focus,
+    input[type="url"]:focus,
+    input[type="number"]:focus,
+    input[type="password"]:focus,
+    select:focus,
+    textarea:focus {
+      border-color: #93c5fd;
+    }
+    input::placeholder,
+    textarea::placeholder {
+      color: #cbd5e1;
+    }
+    input:disabled,
+    textarea:disabled,
+    select:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      background: #f1f5f9;
+    }
+
+    /* Request row */
+    #request-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    #method-select {
+      width: 108px;
+      flex-shrink: 0;
+      font-weight: 600;
+      color: #2563eb;
+    }
+    #url-input {
+      flex: 1;
+    }
+
+    /* Radio groups */
+    .radio-group {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .radio-group label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #1e293b;
+      font-weight: 400;
+    }
+    .radio-group input[type="radio"] {
+      width: auto;
+      accent-color: #2563eb;
+      cursor: pointer;
+    }
+
+    .auth-fields {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .field-row {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    /* Headers */
+    #headers-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 8px;
+    }
+    .header-row {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+    .header-key {
+      width: 120px;
+      flex-shrink: 0;
+    }
+    .header-val {
+      flex: 1;
+    }
+    .remove-btn {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 15px;
+      padding: 0 3px;
+      line-height: 1;
+      font-family: inherit;
+      flex-shrink: 0;
+      transition: color 0.12s;
+    }
+    .remove-btn:hover { color: #ef4444; }
+
+    #add-header-btn {
+      width: 100%;
+      padding: 7px;
+      border: 1.5px dashed #e2e8f0;
+      border-radius: 6px;
+      background: none;
+      color: #94a3b8;
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    #add-header-btn:hover {
+      border-color: #93c5fd;
+      color: #2563eb;
+    }
+
+    /* Body section */
+    #body-section.disabled .section-label,
+    #body-section.disabled .radio-group label {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    #body-section.disabled .radio-group input[type="radio"] {
+      pointer-events: none;
+    }
+    #body-disabled-note {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 6px;
+      display: none;
+    }
+    #body-section.disabled #body-disabled-note {
+      display: block;
+    }
+    #body-textarea {
+      margin-top: 10px;
+      min-height: 90px;
+      resize: vertical;
+      font-family: 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    /* Options */
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px 10px;
+      margin-bottom: 12px;
+    }
+    .checkbox-grid label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      color: #1e293b;
+      font-weight: 400;
+    }
+    .checkbox-grid input[type="checkbox"] {
+      width: auto;
+      accent-color: #2563eb;
+      cursor: pointer;
+    }
+    .options-extras {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .options-extras .field-row {
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+    }
+    .options-extras label {
+      width: 110px;
+      flex-shrink: 0;
+    }
+    .options-extras input {
+      flex: 1;
+    }
+
+    /* Reset button */
+    #reset-btn {
+      width: calc(100% - 36px);
+      margin: 16px 18px;
+      padding: 9px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      background: #f8fafc;
+      color: #64748b;
+      font-size: 13px;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    #reset-btn:hover {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #dc2626;
+    }
+
+    /* Right panel */
+    #right-panel {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    #cmd-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 20px;
+      border-bottom: 1px solid #f1f5f9;
+      background: #ffffff;
+      flex-shrink: 0;
+    }
+    #cmd-toolbar-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    #copy-btn {
+      font-size: 12px;
+      padding: 5px 13px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      color: #475569;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 500;
+      transition: background 0.15s, color 0.15s;
+    }
+    #copy-btn:hover {
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+    #copy-btn.copied {
+      background: #f0fdf4;
+      color: #16a34a;
+      border-color: #bbf7d0;
+    }
+
+    #cmd-output-wrap {
+      flex: 1;
+      padding: 20px;
+      overflow: auto;
+    }
+
+    #cmd-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      min-height: 200px;
+      text-align: center;
+    }
+    #cmd-empty-icon {
+      font-size: 36px;
+      opacity: 0.09;
+      margin-bottom: 10px;
+      line-height: 1;
+    }
+    #cmd-empty-text {
+      font-size: 13px;
+      color: #94a3b8;
+    }
+    #cmd-empty-hint {
+      font-size: 11px;
+      color: #cbd5e1;
+      margin-top: 5px;
+    }
+
+    #cmd-pre {
+      margin: 0;
+      font-family: 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+      font-size: 13px;
+      line-height: 1.75;
+      color: #1e293b;
+      white-space: pre-wrap;
+      word-break: break-all;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 18px 20px;
+    }
+
+    /* Syntax tokens */
+    .t-keyword { color: #7c3aed; font-weight: 600; }
+    .t-flag    { color: #2563eb; }
+    .t-value   { color: #059669; }
+    .t-url     { color: #0f172a; font-weight: 500; }
+    .t-cont    { color: #94a3b8; user-select: none; }
+  </style>
+</head>
+<body>
+
+  <div id="back-nav">
+    <a href="/">&#8592; Tiny App Town</a>
+  </div>
+
+  <div id="app-header">
+    <div id="header-icon">
+      <!-- >_ terminal icon -->
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2.5 5L6 8L2.5 11" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M8 11H13" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <span id="header-title">cURL Builder</span>
+    <span id="header-pill">Command generator</span>
+  </div>
+
+  <div id="layout">
+
+    <!-- Sidebar -->
+    <div id="sidebar">
+
+      <!-- 1. Request -->
+      <div class="sidebar-section">
+        <div class="section-label">Request</div>
+        <div id="request-row">
+          <select id="method-select">
+            <option>GET</option>
+            <option>POST</option>
+            <option>PUT</option>
+            <option>PATCH</option>
+            <option>DELETE</option>
+            <option>HEAD</option>
+            <option>OPTIONS</option>
+          </select>
+          <input type="url" id="url-input" placeholder="https://api.example.com/endpoint" />
+        </div>
+      </div>
+
+      <!-- 2. Authentication -->
+      <div class="sidebar-section">
+        <div class="section-label">Authentication</div>
+        <div class="radio-group">
+          <label><input type="radio" name="auth" value="none" checked /> None</label>
+          <label><input type="radio" name="auth" value="basic" /> Basic</label>
+          <label><input type="radio" name="auth" value="bearer" /> Bearer</label>
+        </div>
+        <div id="auth-basic" class="auth-fields" style="display:none">
+          <div class="field-row">
+            <label for="auth-username">Username</label>
+            <input type="text" id="auth-username" placeholder="username" />
+          </div>
+          <div class="field-row">
+            <label for="auth-password">Password</label>
+            <input type="password" id="auth-password" placeholder="password" />
+          </div>
+        </div>
+        <div id="auth-bearer" class="auth-fields" style="display:none">
+          <div class="field-row">
+            <label for="auth-token">Token</label>
+            <input type="text" id="auth-token" placeholder="your-token-here" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Headers -->
+      <div class="sidebar-section">
+        <div class="section-label">Headers</div>
+        <div id="headers-list"></div>
+        <button id="add-header-btn">+ Add header</button>
+      </div>
+
+      <!-- 4. Body -->
+      <div class="sidebar-section" id="body-section">
+        <div class="section-label">Body</div>
+        <div class="radio-group">
+          <label><input type="radio" name="body-type" value="none" checked /> None</label>
+          <label><input type="radio" name="body-type" value="json" /> JSON</label>
+          <label><input type="radio" name="body-type" value="form" /> Form</label>
+          <label><input type="radio" name="body-type" value="raw" /> Raw</label>
+        </div>
+        <div id="body-disabled-note">Body not available for GET / HEAD requests.</div>
+        <textarea id="body-textarea" style="display:none" placeholder=""></textarea>
+      </div>
+
+      <!-- 5. Options -->
+      <div class="sidebar-section">
+        <div class="section-label">Options</div>
+        <div class="checkbox-grid">
+          <label><input type="checkbox" id="opt-L" /> Follow redirects</label>
+          <label><input type="checkbox" id="opt-v" /> Verbose</label>
+          <label><input type="checkbox" id="opt-s" /> Silent</label>
+          <label><input type="checkbox" id="opt-k" /> Insecure (skip TLS)</label>
+          <label><input type="checkbox" id="opt-compressed" /> Compressed</label>
+          <label><input type="checkbox" id="opt-i" /> Include response headers</label>
+        </div>
+        <div class="options-extras">
+          <div class="field-row">
+            <label for="opt-timeout">Timeout (seconds)</label>
+            <input type="number" id="opt-timeout" placeholder="e.g. 30" min="0" />
+          </div>
+          <div class="field-row">
+            <label for="opt-output">Output file</label>
+            <input type="text" id="opt-output" placeholder="e.g. response.json" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Reset -->
+      <button id="reset-btn">Reset</button>
+
+    </div><!-- /sidebar -->
+
+    <!-- Right panel -->
+    <div id="right-panel">
+      <div id="cmd-toolbar">
+        <span id="cmd-toolbar-label">Generated command</span>
+        <button id="copy-btn">Copy</button>
+      </div>
+      <div id="cmd-output-wrap">
+        <div id="cmd-empty">
+          <div id="cmd-empty-icon">&gt;_</div>
+          <div id="cmd-empty-text">Enter a URL to generate the command</div>
+          <div id="cmd-empty-hint">Fill in options on the left — the command updates live</div>
+        </div>
+        <pre id="cmd-pre" style="display:none"></pre>
+      </div>
+    </div>
+
+  </div><!-- /layout -->
+
+  <script>
+    // ── DOM refs ──────────────────────────────────────────────────────────────
+
+    const methodEl     = document.getElementById('method-select');
+    const urlEl        = document.getElementById('url-input');
+    const authRadios   = document.querySelectorAll('input[name="auth"]');
+    const authBasicEl  = document.getElementById('auth-basic');
+    const authBearerEl = document.getElementById('auth-bearer');
+    const usernameEl   = document.getElementById('auth-username');
+    const passwordEl   = document.getElementById('auth-password');
+    const tokenEl      = document.getElementById('auth-token');
+    const headersList  = document.getElementById('headers-list');
+    const addHeaderBtn = document.getElementById('add-header-btn');
+    const bodySection  = document.getElementById('body-section');
+    const bodyRadios   = document.querySelectorAll('input[name="body-type"]');
+    const bodyTextarea = document.getElementById('body-textarea');
+    const optL         = document.getElementById('opt-L');
+    const optV         = document.getElementById('opt-v');
+    const optS         = document.getElementById('opt-s');
+    const optK         = document.getElementById('opt-k');
+    const optCompressed= document.getElementById('opt-compressed');
+    const optI         = document.getElementById('opt-i');
+    const optTimeout   = document.getElementById('opt-timeout');
+    const optOutput    = document.getElementById('opt-output');
+    const resetBtn     = document.getElementById('reset-btn');
+    const copyBtn      = document.getElementById('copy-btn');
+    const cmdEmpty     = document.getElementById('cmd-empty');
+    const cmdPre       = document.getElementById('cmd-pre');
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    function getAuthMode() {
+      for (const r of authRadios) { if (r.checked) return r.value; }
+      return 'none';
+    }
+
+    function getBodyType() {
+      for (const r of bodyRadios) { if (r.checked) return r.value; }
+      return 'none';
+    }
+
+    function bodyDisabled() {
+      const m = methodEl.value;
+      return m === 'GET' || m === 'HEAD';
+    }
+
+    // Escape single quotes inside single-quoted shell strings: ' → '\''
+    function escapeSingleQuote(s) {
+      return s.replace(/'/g, "'\\''");
+    }
+
+    // Escape double quotes inside double-quoted shell strings
+    function escapeDoubleQuote(s) {
+      return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    }
+
+    // ── Header rows ───────────────────────────────────────────────────────────
+
+    function addHeaderRow(key = '', val = '') {
+      const row = document.createElement('div');
+      row.className = 'header-row';
+
+      const keyInput = document.createElement('input');
+      keyInput.type = 'text';
+      keyInput.className = 'header-key';
+      keyInput.placeholder = 'Header-Name';
+      keyInput.value = key;
+      keyInput.addEventListener('input', update);
+
+      const valInput = document.createElement('input');
+      valInput.type = 'text';
+      valInput.className = 'header-val';
+      valInput.placeholder = 'value';
+      valInput.value = val;
+      valInput.addEventListener('input', update);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-btn';
+      removeBtn.title = 'Remove header';
+      removeBtn.textContent = '×';
+      removeBtn.addEventListener('click', () => {
+        headersList.removeChild(row);
+        update();
+      });
+
+      row.appendChild(keyInput);
+      row.appendChild(valInput);
+      row.appendChild(removeBtn);
+      headersList.appendChild(row);
+    }
+
+    function getHeaderRows() {
+      const rows = [];
+      for (const row of headersList.querySelectorAll('.header-row')) {
+        const key = row.querySelector('.header-key').value.trim();
+        const val = row.querySelector('.header-val').value.trim();
+        rows.push({ key, val });
+      }
+      return rows;
+    }
+
+    addHeaderBtn.addEventListener('click', () => {
+      addHeaderRow();
+      // Focus the new key input
+      const rows = headersList.querySelectorAll('.header-row');
+      if (rows.length) rows[rows.length - 1].querySelector('.header-key').focus();
+      update();
+    });
+
+    // ── Auth show/hide ────────────────────────────────────────────────────────
+
+    function updateAuthUI() {
+      const mode = getAuthMode();
+      authBasicEl.style.display  = mode === 'basic'  ? 'flex' : 'none';
+      authBearerEl.style.display = mode === 'bearer' ? 'flex' : 'none';
+    }
+
+    authRadios.forEach(r => r.addEventListener('change', () => { updateAuthUI(); update(); }));
+
+    // ── Body section disable ──────────────────────────────────────────────────
+
+    function updateBodyUI() {
+      const disabled = bodyDisabled();
+      bodySection.classList.toggle('disabled', disabled);
+
+      // Disable the radio inputs physically too
+      bodyRadios.forEach(r => { r.disabled = disabled; });
+
+      if (disabled) {
+        // Force to "none" visually; keep actual radio state for when re-enabled
+        bodyTextarea.style.display = 'none';
+        bodyTextarea.disabled = true;
+      } else {
+        bodyTextarea.disabled = false;
+        const bt = getBodyType();
+        bodyTextarea.style.display = bt !== 'none' ? 'block' : 'none';
+        updateBodyPlaceholder(bt);
+      }
+    }
+
+    function updateBodyPlaceholder(bt) {
+      if (bt === 'json') bodyTextarea.placeholder = '{\n  "key": "value"\n}';
+      else if (bt === 'form') bodyTextarea.placeholder = 'field=value\nanother=value';
+      else if (bt === 'raw') bodyTextarea.placeholder = 'raw body content';
+    }
+
+    bodyRadios.forEach(r => r.addEventListener('change', () => {
+      if (!bodyDisabled()) {
+        const bt = getBodyType();
+        bodyTextarea.style.display = bt !== 'none' ? 'block' : 'none';
+        updateBodyPlaceholder(bt);
+      }
+      update();
+    }));
+
+    methodEl.addEventListener('change', () => { updateBodyUI(); update(); });
+
+    // ── Command generation ────────────────────────────────────────────────────
+
+    function buildSegments() {
+      const method  = methodEl.value;
+      const url     = urlEl.value.trim();
+      const auth    = getAuthMode();
+      const bodyType = bodyDisabled() ? 'none' : getBodyType();
+      const headers = getHeaderRows();
+
+      // Collect segments: each is { flag, value } where value may be null
+      const segs = [];
+
+      // Method (skip if GET)
+      if (method !== 'GET') {
+        segs.push({ flag: '-X', value: method });
+      }
+
+      // Auth
+      if (auth === 'basic') {
+        const u = usernameEl.value;
+        const p = passwordEl.value;
+        segs.push({ flag: '-u', value: `${escapeDoubleQuote(u)}:${escapeDoubleQuote(p)}` });
+      } else if (auth === 'bearer') {
+        const t = tokenEl.value;
+        segs.push({ flag: '-H', value: `Authorization: Bearer ${escapeDoubleQuote(t)}` });
+      }
+
+      // Check if Content-Type: application/json is already in user headers
+      const hasJsonCT = headers.some(h =>
+        h.key.toLowerCase() === 'content-type' &&
+        h.val.toLowerCase().includes('application/json')
+      );
+
+      // JSON body: auto-insert Content-Type if missing
+      if (bodyType === 'json' && !hasJsonCT) {
+        segs.push({ flag: '-H', value: 'Content-Type: application/json' });
+      }
+
+      // User headers
+      for (const { key, val } of headers) {
+        if (!key) continue;
+        segs.push({ flag: '-H', value: `${key}: ${escapeDoubleQuote(val)}` });
+      }
+
+      // Body
+      if (bodyType === 'json') {
+        const body = bodyTextarea.value;
+        if (body.trim()) {
+          segs.push({ flag: '-d', value: escapeSingleQuote(body), singleQuoted: true });
+        }
+      } else if (bodyType === 'form') {
+        const lines = bodyTextarea.value.split('\n');
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed) {
+            segs.push({ flag: '--data-urlencode', value: escapeDoubleQuote(trimmed) });
+          }
+        }
+      } else if (bodyType === 'raw') {
+        const body = bodyTextarea.value;
+        if (body.trim()) {
+          segs.push({ flag: '-d', value: escapeSingleQuote(body), singleQuoted: true });
+        }
+      }
+
+      // Options
+      if (optL.checked)          segs.push({ flag: '-L', value: null });
+      if (optV.checked)          segs.push({ flag: '-v', value: null });
+      if (optS.checked)          segs.push({ flag: '-s', value: null });
+      if (optK.checked)          segs.push({ flag: '-k', value: null });
+      if (optCompressed.checked) segs.push({ flag: '--compressed', value: null });
+      if (optI.checked)          segs.push({ flag: '-i', value: null });
+
+      const timeout = optTimeout.value.trim();
+      if (timeout) segs.push({ flag: '--max-time', value: timeout });
+
+      const output = optOutput.value.trim();
+      if (output) segs.push({ flag: '-o', value: escapeDoubleQuote(output) });
+
+      return { url, segs };
+    }
+
+    function buildPlainText(url, segs) {
+      if (!url) return '';
+      if (segs.length === 0) {
+        return `curl "${url}"`;
+      }
+      const parts = ['curl'];
+      for (const seg of segs) {
+        if (seg.value === null) {
+          parts.push(seg.flag);
+        } else if (seg.singleQuoted) {
+          parts.push(`${seg.flag} '${seg.value}'`);
+        } else {
+          parts.push(`${seg.flag} "${seg.value}"`);
+        }
+      }
+      parts.push(`"${url}"`);
+      // Multi-line with continuations
+      return parts.join(' \\\n  ');
+    }
+
+    function buildHighlighted(url, segs) {
+      if (!url) return '';
+
+      const cont = `<span class="t-cont"> \\</span>`;
+      const nl   = '\n  ';
+
+      if (segs.length === 0) {
+        return `<span class="t-keyword">curl</span> <span class="t-url">"${escapeHtml(url)}"</span>`;
+      }
+
+      let html = `<span class="t-keyword">curl</span>`;
+
+      for (const seg of segs) {
+        html += cont + nl;
+        html += `<span class="t-flag">${escapeHtml(seg.flag)}</span>`;
+        if (seg.value !== null) {
+          if (seg.singleQuoted) {
+            html += ` <span class="t-value">'${escapeHtml(seg.value)}'</span>`;
+          } else {
+            html += ` <span class="t-value">"${escapeHtml(seg.value)}"</span>`;
+          }
+        }
+      }
+
+      html += cont + nl;
+      html += `<span class="t-url">"${escapeHtml(url)}"</span>`;
+
+      return html;
+    }
+
+    function escapeHtml(s) {
+      return s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // ── Update output ─────────────────────────────────────────────────────────
+
+    function update() {
+      const { url, segs } = buildSegments();
+
+      if (!url) {
+        cmdEmpty.style.display = 'flex';
+        cmdPre.style.display   = 'none';
+        copyBtn.disabled = true;
+        return;
+      }
+
+      cmdEmpty.style.display = 'none';
+      cmdPre.style.display   = 'block';
+      copyBtn.disabled = false;
+
+      cmdPre.innerHTML = buildHighlighted(url, segs);
+      // Store plain text for copy
+      cmdPre.dataset.plain = buildPlainText(url, segs);
+    }
+
+    // ── Copy button ───────────────────────────────────────────────────────────
+
+    copyBtn.addEventListener('click', () => {
+      const text = cmdPre.dataset.plain || '';
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        copyBtn.textContent = '✓ Copied!';
+        copyBtn.classList.add('copied');
+        setTimeout(() => {
+          copyBtn.textContent = 'Copy';
+          copyBtn.classList.remove('copied');
+        }, 1800);
+      });
+    });
+
+    // ── Reset ─────────────────────────────────────────────────────────────────
+
+    function reset() {
+      methodEl.value = 'GET';
+      urlEl.value = '';
+
+      // Auth
+      authRadios.forEach(r => { r.checked = r.value === 'none'; });
+      usernameEl.value = '';
+      passwordEl.value = '';
+      tokenEl.value = '';
+
+      // Headers
+      headersList.innerHTML = '';
+
+      // Body
+      bodyRadios.forEach(r => { r.checked = r.value === 'none'; });
+      bodyTextarea.value = '';
+
+      // Options
+      optL.checked = false;
+      optV.checked = false;
+      optS.checked = false;
+      optK.checked = false;
+      optCompressed.checked = false;
+      optI.checked = false;
+      optTimeout.value = '';
+      optOutput.value = '';
+
+      updateAuthUI();
+      updateBodyUI();
+      update();
+    }
+
+    resetBtn.addEventListener('click', reset);
+
+    // ── Wire up all live inputs ───────────────────────────────────────────────
+
+    urlEl.addEventListener('input', update);
+    usernameEl.addEventListener('input', update);
+    passwordEl.addEventListener('input', update);
+    tokenEl.addEventListener('input', update);
+    bodyTextarea.addEventListener('input', update);
+    optL.addEventListener('change', update);
+    optV.addEventListener('change', update);
+    optS.addEventListener('change', update);
+    optK.addEventListener('change', update);
+    optCompressed.addEventListener('change', update);
+    optI.addEventListener('change', update);
+    optTimeout.addEventListener('input', update);
+    optOutput.addEventListener('input', update);
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+
+    updateAuthUI();
+    updateBodyUI();
+    update();
+  </script>
+</body>
+</html>
