@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Claude Config Studio — AI config generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Fira+Code&display=swap" rel="stylesheet" />
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f8fafc;
+      color: #1e293b;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+    /* Back nav */
+    #back-nav {
+      background: #2c2420;
+      padding: 8px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      flex-shrink: 0;
+    }
+    #back-nav a {
+      color: #f7f4ef;
+      font-size: 12px;
+      font-family: system-ui, sans-serif;
+      text-decoration: none;
+      letter-spacing: 0.05em;
+      opacity: 0.8;
+    }
+    #back-nav a:hover { opacity: 1; }
+
+    /* App header */
+    #app-header {
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 13px 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    #header-icon {
+      width: 26px;
+      height: 26px;
+      background: #2563eb;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    #header-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+    #header-pill {
+      font-size: 11px;
+      color: #94a3b8;
+      background: #f1f5f9;
+      padding: 2px 9px;
+      border-radius: 20px;
+      border: 1px solid #e2e8f0;
+      margin-left: 2px;
+    }
+
+    /* Tab bar */
+    #tab-bar {
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      flex-shrink: 0;
+    }
+    .tab-btn {
+      padding: 11px 24px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      color: #94a3b8;
+      letter-spacing: 0.01em;
+      transition: color 0.12s, border-color 0.12s;
+      margin-bottom: -1px;
+    }
+    .tab-btn:hover { color: #475569; }
+    .tab-btn.active {
+      color: #2563eb;
+      border-bottom-color: #2563eb;
+    }
+
+    /* Main layout */
+    #layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* Sidebar */
+    #sidebar {
+      width: 360px;
+      flex-shrink: 0;
+      background: #ffffff;
+      border-right: 1px solid #e2e8f0;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 9px;
+    }
+
+    /* Form elements */
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .field label {
+      font-size: 11px;
+      font-weight: 500;
+      color: #64748b;
+    }
+    .field input[type="text"],
+    .field textarea {
+      width: 100%;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      color: #1e293b;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 9px 12px;
+      outline: none;
+      transition: border-color 0.15s;
+      line-height: 1.55;
+    }
+    .field input[type="text"]:focus,
+    .field textarea:focus {
+      border-color: #93c5fd;
+    }
+    .field textarea {
+      resize: vertical;
+    }
+
+    /* Commands grid */
+    .commands-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* Sub-mode toggle */
+    #submode-wrap {
+      display: flex;
+      gap: 4px;
+      background: #f1f5f9;
+      border-radius: 8px;
+      padding: 3px;
+    }
+    .submode-btn {
+      flex: 1;
+      padding: 7px 12px;
+      border-radius: 6px;
+      border: none;
+      font-size: 12px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      color: #94a3b8;
+      background: none;
+      transition: background 0.12s, color 0.12s;
+    }
+    .submode-btn.active {
+      background: #ffffff;
+      color: #1e293b;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    /* Primary button */
+    .primary-btn {
+      padding: 11px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.15s;
+    }
+    .primary-btn:not(:disabled) {
+      background: #2563eb;
+      color: #ffffff;
+    }
+    .primary-btn:not(:disabled):hover { background: #1d4ed8; }
+    .primary-btn:disabled {
+      background: #e2e8f0;
+      color: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    /* Error box */
+    .error-box {
+      display: none;
+      font-size: 12px;
+      color: #b91c1c;
+      padding: 10px 13px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 7px;
+      line-height: 1.5;
+    }
+    .error-box.visible { display: block; }
+
+    /* Scope radio */
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .radio-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .radio-item input[type="radio"] {
+      margin-top: 2px;
+      accent-color: #2563eb;
+      flex-shrink: 0;
+    }
+    .radio-item-label {
+      font-size: 13px;
+      color: #1e293b;
+      line-height: 1.4;
+    }
+    .radio-item-sub {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 1px;
+    }
+
+    /* Right panel */
+    #right-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      min-width: 0;
+    }
+
+    /* Empty state */
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 40px;
+      text-align: center;
+    }
+    .empty-icon {
+      font-size: 40px;
+      opacity: 0.08;
+      margin-bottom: 14px;
+      line-height: 1;
+    }
+    .empty-text {
+      font-size: 14px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+    .empty-hint {
+      font-size: 12px;
+      color: #cbd5e1;
+      margin-top: 6px;
+    }
+
+    /* Output panel */
+    .output-panel {
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Toolbar */
+    .output-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .output-toolbar-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* Copy button */
+    .copy-btn {
+      font-size: 12px;
+      padding: 5px 13px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      color: #475569;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 500;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .copy-btn:hover {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #1d4ed8;
+    }
+    .copy-btn.copied {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+      color: #16a34a;
+    }
+
+    /* Pre block */
+    .output-pre {
+      margin: 0;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px 18px;
+      font-size: 12px;
+      line-height: 1.7;
+      font-family: 'Fira Code', monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-x: auto;
+      max-height: 60vh;
+      color: #334155;
+    }
+
+    /* Changes list */
+    .changes-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .changes-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .changes-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .changes-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 13px;
+      color: #334155;
+      line-height: 1.5;
+    }
+    .changes-list li::before {
+      content: '';
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      background: #2563eb;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 7px;
+    }
+
+    /* Tab panels */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: contents; }
+  </style>
+</head>
+<body>
+
+  <div id="back-nav">
+    <a href="/">← Tiny App Town</a>
+  </div>
+
+  <div id="app-header">
+    <div id="header-icon">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="1.5" y="2" width="11" height="10" rx="1.5" stroke="white" stroke-width="1.2" fill="none" opacity="0.7"/>
+        <rect x="3.5" y="4.5" width="5" height="1" rx="0.5" fill="white"/>
+        <rect x="3.5" y="6.5" width="7" height="1" rx="0.5" fill="white"/>
+        <rect x="3.5" y="8.5" width="4" height="1" rx="0.5" fill="white"/>
+      </svg>
+    </div>
+    <span id="header-title">Claude Config Studio</span>
+    <span id="header-pill">AI config generator</span>
+  </div>
+
+  <div id="tab-bar">
+    <button class="tab-btn active" data-tab="claudemd">CLAUDE.md</button>
+    <button class="tab-btn" data-tab="skill">Skill Builder</button>
+  </div>
+
+  <div id="layout">
+
+    <!-- ── Sidebar ─────────────────────────────────────────────── -->
+    <div id="sidebar">
+
+      <!-- CLAUDE.md tab sidebar -->
+      <div class="tab-panel active" id="sidebar-claudemd">
+
+        <div>
+          <div class="section-label">Mode</div>
+          <div id="submode-wrap">
+            <button class="submode-btn active" data-submode="generate">Generate</button>
+            <button class="submode-btn" data-submode="improve">Improve</button>
+          </div>
+        </div>
+
+        <!-- Generate sub-mode -->
+        <div id="generate-form" class="field-group">
+          <div class="field">
+            <label for="proj-name">Project name</label>
+            <input type="text" id="proj-name" placeholder="e.g. my-api" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="proj-desc">Description</label>
+            <textarea id="proj-desc" rows="3" placeholder="What does it do?"></textarea>
+          </div>
+          <div class="field">
+            <label for="proj-stack">Tech stack</label>
+            <input type="text" id="proj-stack" placeholder="e.g. Next.js, TypeScript, Postgres" autocomplete="off" />
+          </div>
+          <div>
+            <label class="section-label" style="display:block">Key commands</label>
+            <div class="commands-grid">
+              <div class="field">
+                <label for="cmd-build">Build</label>
+                <input type="text" id="cmd-build" placeholder="npm run build" autocomplete="off" />
+              </div>
+              <div class="field">
+                <label for="cmd-test">Test</label>
+                <input type="text" id="cmd-test" placeholder="npm test" autocomplete="off" />
+              </div>
+              <div class="field">
+                <label for="cmd-lint">Lint</label>
+                <input type="text" id="cmd-lint" placeholder="npm run lint" autocomplete="off" />
+              </div>
+              <div class="field">
+                <label for="cmd-dev">Dev / Run</label>
+                <input type="text" id="cmd-dev" placeholder="npm run dev" autocomplete="off" />
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="proj-context">Additional context <span style="color:#cbd5e1;font-weight:400">(optional)</span></label>
+            <textarea id="proj-context" rows="3" placeholder="Conventions, gotchas, constraints…"></textarea>
+          </div>
+          <button class="primary-btn" id="gen-claudemd-btn" disabled>Generate CLAUDE.md</button>
+          <div class="error-box" id="gen-error"></div>
+        </div>
+
+        <!-- Improve sub-mode -->
+        <div id="improve-form" class="field-group" style="display:none">
+          <div class="field">
+            <label for="existing-claudemd">Paste your existing CLAUDE.md</label>
+            <textarea id="existing-claudemd" rows="10" style="min-height:220px" placeholder="# My Project&#10;..."></textarea>
+          </div>
+          <button class="primary-btn" id="improve-claudemd-btn" disabled>Suggest improvements</button>
+          <div class="error-box" id="improve-error"></div>
+        </div>
+
+      </div>
+
+      <!-- Skill Builder tab sidebar -->
+      <div class="tab-panel" id="sidebar-skill">
+        <div class="field-group">
+          <div class="field">
+            <label for="skill-name">Skill name</label>
+            <input type="text" id="skill-name" placeholder="e.g. deploy-check" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="skill-desc">What does it do?</label>
+            <textarea id="skill-desc" rows="4" placeholder="Describe the skill's purpose and behavior…"></textarea>
+          </div>
+          <div class="field">
+            <label for="skill-trigger">When should it trigger? <span style="color:#cbd5e1;font-weight:400">(optional)</span></label>
+            <input type="text" id="skill-trigger" placeholder="e.g. before any deployment" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label class="section-label" style="display:block;margin-bottom:10px">Scope</label>
+            <div class="radio-group">
+              <label class="radio-item">
+                <input type="radio" name="skill-scope" value="project" checked />
+                <div>
+                  <div class="radio-item-label">Project</div>
+                  <div class="radio-item-sub">.claude/skills/&lt;name&gt;.md</div>
+                </div>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="skill-scope" value="user" />
+                <div>
+                  <div class="radio-item-label">User</div>
+                  <div class="radio-item-sub">~/.claude/skills/&lt;name&gt;.md</div>
+                </div>
+              </label>
+            </div>
+          </div>
+          <button class="primary-btn" id="gen-skill-btn" disabled>Generate skill.md</button>
+          <div class="error-box" id="skill-error"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Right panel ─────────────────────────────────────────── -->
+    <div id="right-panel">
+
+      <!-- CLAUDE.md right panel -->
+      <div class="tab-panel active" id="right-claudemd">
+        <div class="empty-state" id="claudemd-empty">
+          <div class="empty-icon">◈</div>
+          <div class="empty-text">Your CLAUDE.md appears here</div>
+          <div class="empty-hint">Fill in the form on the left and generate</div>
+        </div>
+        <div class="output-panel" id="claudemd-output" style="display:none">
+          <!-- Generate output -->
+          <div id="gen-output-section">
+            <div class="output-toolbar">
+              <span class="output-toolbar-label">CLAUDE.md</span>
+              <button class="copy-btn" id="copy-claudemd-btn">Copy</button>
+            </div>
+            <pre class="output-pre" id="claudemd-pre"></pre>
+          </div>
+          <!-- Improve output -->
+          <div id="improve-output-section" style="display:none">
+            <div class="output-toolbar">
+              <span class="output-toolbar-label">Improved CLAUDE.md</span>
+              <button class="copy-btn" id="copy-improved-btn">Copy</button>
+            </div>
+            <pre class="output-pre" id="improved-pre"></pre>
+            <div class="changes-section" style="margin-top:24px">
+              <div class="changes-section-label">What changed</div>
+              <ul class="changes-list" id="changes-list"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Skill Builder right panel -->
+      <div class="tab-panel" id="right-skill">
+        <div class="empty-state" id="skill-empty">
+          <div class="empty-icon">◈</div>
+          <div class="empty-text">Your skill.md appears here</div>
+          <div class="empty-hint">Fill in the form on the left and generate</div>
+        </div>
+        <div class="output-panel" id="skill-output" style="display:none">
+          <div>
+            <div class="output-toolbar">
+              <span class="output-toolbar-label" id="skill-path-label">.claude/skills/skill.md</span>
+              <button class="copy-btn" id="copy-skill-btn">Copy</button>
+            </div>
+            <pre class="output-pre" id="skill-pre"></pre>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // ── System prompts ───────────────────────────────────────────────────────
+
+    const CLAUDEMD_GEN_SYSTEM = `You are a Claude Code expert. Generate a CLAUDE.md file for the described project.
+
+CLAUDE.md is read by Claude Code to understand the project. Rules:
+- Be concise and specific — not verbose documentation
+- Use ## sections: Overview, Commands, Code Style, Key Files (only include sections with real content)
+- Commands section: use code blocks with actual commands, not placeholders
+- Code Style: specific patterns, naming conventions, what to avoid — skip if nothing specific given
+- Key Files: only if the user provided file/directory info
+- Add a PRINCIPLES or NOTES section only if there are important constraints or gotchas
+- Under 250 lines. No filler. Every line must be useful to Claude.
+
+Output ONLY the CLAUDE.md markdown. No explanation, no preamble.`;
+
+    const CLAUDEMD_IMPROVE_SYSTEM = `You are a Claude Code expert. Review and improve the provided CLAUDE.md.
+
+Return ONLY valid JSON, parseable by JSON.parse() — no markdown fences:
+{
+  "improved": "<full improved CLAUDE.md content>",
+  "changes": ["specific change 1", "specific change 2", ...]
+}
+
+When improving:
+- Add missing sections (commands, conventions, gotchas) that would help Claude
+- Make vague instructions specific ("write clean code" → remove it or replace with concrete rule)
+- Remove redundant or obvious content
+- Fix formatting inconsistencies
+- Keep it concise — cut anything that doesn't guide Claude's behavior
+
+"changes": 3-6 specific, concrete improvements (name what was added/removed/changed and why).`;
+
+    const SKILL_SYSTEM = `You are a Claude Code expert. Generate a skill.md file for a Claude Code custom slash command.
+
+A skill.md defines a reusable Claude Code skill invoked as /<skill-name>. Output ONLY the skill.md markdown — no explanation, no preamble.
+
+Best practices:
+- First line: one sentence describing what the skill does and when to use it (this is shown in the skill list)
+- Use ## sections as needed: Instructions, Steps, Output, Notes
+- Instructions must be specific and actionable — numbered steps where order matters
+- Include what the deliverable/output should look like
+- Keep it focused and concise — one skill, one clear purpose
+- Do NOT include the skill name as a heading — start directly with the description sentence`;
+
+    // ── State ────────────────────────────────────────────────────────────────
+
+    let activeTab = 'claudemd';       // 'claudemd' | 'skill'
+    let activeSubmode = 'generate';   // 'generate' | 'improve'
+    let loading = false;
+
+    // Stored content
+    let claudemdContent = '';
+    let improvedContent = '';
+    let improvedChanges = [];
+    let skillContent = '';
+
+    // ── DOM refs ─────────────────────────────────────────────────────────────
+
+    // Tabs
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const sidebarClaudemd = document.getElementById('sidebar-claudemd');
+    const sidebarSkill = document.getElementById('sidebar-skill');
+    const rightClaudemd = document.getElementById('right-claudemd');
+    const rightSkill = document.getElementById('right-skill');
+
+    // Sub-mode
+    const submodeBtns = document.querySelectorAll('.submode-btn');
+    const generateForm = document.getElementById('generate-form');
+    const improveForm = document.getElementById('improve-form');
+
+    // Generate form fields
+    const projName = document.getElementById('proj-name');
+    const projDesc = document.getElementById('proj-desc');
+    const projStack = document.getElementById('proj-stack');
+    const cmdBuild = document.getElementById('cmd-build');
+    const cmdTest = document.getElementById('cmd-test');
+    const cmdLint = document.getElementById('cmd-lint');
+    const cmdDev = document.getElementById('cmd-dev');
+    const projContext = document.getElementById('proj-context');
+    const genBtn = document.getElementById('gen-claudemd-btn');
+    const genError = document.getElementById('gen-error');
+
+    // Improve form
+    const existingClaudemd = document.getElementById('existing-claudemd');
+    const improveBtn = document.getElementById('improve-claudemd-btn');
+    const improveError = document.getElementById('improve-error');
+
+    // CLAUDE.md output
+    const claudemdEmpty = document.getElementById('claudemd-empty');
+    const claudemdOutput = document.getElementById('claudemd-output');
+    const genOutputSection = document.getElementById('gen-output-section');
+    const improveOutputSection = document.getElementById('improve-output-section');
+    const claudemdPre = document.getElementById('claudemd-pre');
+    const improvedPre = document.getElementById('improved-pre');
+    const changesList = document.getElementById('changes-list');
+    const copyClaudemdBtn = document.getElementById('copy-claudemd-btn');
+    const copyImprovedBtn = document.getElementById('copy-improved-btn');
+
+    // Skill
+    const skillName = document.getElementById('skill-name');
+    const skillDesc = document.getElementById('skill-desc');
+    const skillTrigger = document.getElementById('skill-trigger');
+    const genSkillBtn = document.getElementById('gen-skill-btn');
+    const skillError = document.getElementById('skill-error');
+    const skillEmpty = document.getElementById('skill-empty');
+    const skillOutputEl = document.getElementById('skill-output');
+    const skillPre = document.getElementById('skill-pre');
+    const skillPathLabel = document.getElementById('skill-path-label');
+    const copySkillBtn = document.getElementById('copy-skill-btn');
+
+    // ── Tab switching ─────────────────────────────────────────────────────────
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        if (tab === activeTab) return;
+        activeTab = tab;
+
+        tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+
+        // Sidebar
+        sidebarClaudemd.classList.toggle('active', tab === 'claudemd');
+        sidebarSkill.classList.toggle('active', tab === 'skill');
+
+        // Right panel
+        rightClaudemd.classList.toggle('active', tab === 'claudemd');
+        rightSkill.classList.toggle('active', tab === 'skill');
+
+        // Reset right panel to empty
+        resetClaudemdOutput();
+        resetSkillOutput();
+      });
+    });
+
+    function resetClaudemdOutput() {
+      claudemdEmpty.style.display = '';
+      claudemdOutput.style.display = 'none';
+    }
+
+    function resetSkillOutput() {
+      skillEmpty.style.display = '';
+      skillOutputEl.style.display = 'none';
+    }
+
+    // ── Sub-mode switching ────────────────────────────────────────────────────
+
+    submodeBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.submode;
+        if (mode === activeSubmode) return;
+        activeSubmode = mode;
+
+        submodeBtns.forEach(b => b.classList.toggle('active', b.dataset.submode === mode));
+
+        generateForm.style.display = mode === 'generate' ? '' : 'none';
+        improveForm.style.display = mode === 'improve' ? '' : 'none';
+
+        resetClaudemdOutput();
+        genError.classList.remove('visible');
+        improveError.classList.remove('visible');
+      });
+    });
+
+    // ── Button state helpers ──────────────────────────────────────────────────
+
+    function updateGenBtn() {
+      genBtn.disabled = loading || !projName.value.trim() || !projDesc.value.trim();
+    }
+
+    function updateImproveBtn() {
+      improveBtn.disabled = loading || !existingClaudemd.value.trim();
+    }
+
+    function updateSkillBtn() {
+      genSkillBtn.disabled = loading || !skillName.value.trim() || !skillDesc.value.trim();
+    }
+
+    [projName, projDesc].forEach(el => el.addEventListener('input', updateGenBtn));
+    existingClaudemd.addEventListener('input', updateImproveBtn);
+    [skillName, skillDesc].forEach(el => el.addEventListener('input', updateSkillBtn));
+
+    // ── Keyboard shortcuts ────────────────────────────────────────────────────
+
+    function addCmdEnter(textarea, handler) {
+      textarea.addEventListener('keydown', e => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+          e.preventDefault();
+          handler();
+        }
+      });
+    }
+
+    addCmdEnter(projDesc, () => { if (!genBtn.disabled) generateClaudemd(); });
+    addCmdEnter(projContext, () => { if (!genBtn.disabled) generateClaudemd(); });
+    addCmdEnter(existingClaudemd, () => { if (!improveBtn.disabled) improveClaudemd(); });
+    addCmdEnter(skillDesc, () => { if (!genSkillBtn.disabled) generateSkill(); });
+
+    // ── Slugify ───────────────────────────────────────────────────────────────
+
+    function slugify(name) {
+      return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    }
+
+    function skillPath(name, scope) {
+      const slug = slugify(name) || 'skill';
+      return scope === 'user' ? `~/.claude/skills/${slug}.md` : `.claude/skills/${slug}.md`;
+    }
+
+    // ── API call ──────────────────────────────────────────────────────────────
+
+    async function callAPI(system, userMessage) {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 4096,
+          system,
+          messages: [{ role: 'user', content: userMessage }],
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message || 'API error');
+      return (data.content || []).map(b => b.text || '').join('');
+    }
+
+    // ── Set loading state ─────────────────────────────────────────────────────
+
+    function setLoading(btn, isLoading, defaultLabel) {
+      loading = isLoading;
+      if (isLoading) {
+        btn.innerHTML = '<span class="spinner"></span>Generating…';
+        btn.disabled = true;
+      } else {
+        btn.textContent = defaultLabel;
+      }
+      updateGenBtn();
+      updateImproveBtn();
+      updateSkillBtn();
+    }
+
+    // ── Generate CLAUDE.md ────────────────────────────────────────────────────
+
+    genBtn.addEventListener('click', generateClaudemd);
+
+    async function generateClaudemd() {
+      if (loading) return;
+
+      genError.classList.remove('visible');
+
+      const parts = [];
+      if (projName.value.trim()) parts.push(`Project: ${projName.value.trim()}`);
+      if (projDesc.value.trim()) parts.push(`Description: ${projDesc.value.trim()}`);
+      if (projStack.value.trim()) parts.push(`Tech stack: ${projStack.value.trim()}`);
+      if (cmdBuild.value.trim()) parts.push(`Build: ${cmdBuild.value.trim()}`);
+      if (cmdTest.value.trim()) parts.push(`Test: ${cmdTest.value.trim()}`);
+      if (cmdLint.value.trim()) parts.push(`Lint: ${cmdLint.value.trim()}`);
+      if (cmdDev.value.trim()) parts.push(`Dev: ${cmdDev.value.trim()}`);
+      if (projContext.value.trim()) parts.push(`Additional context: ${projContext.value.trim()}`);
+
+      setLoading(genBtn, true, 'Generate CLAUDE.md');
+
+      try {
+        claudemdContent = await callAPI(CLAUDEMD_GEN_SYSTEM, parts.join('\n'));
+        showClaudemdGenOutput(claudemdContent);
+      } catch (e) {
+        genError.textContent = `Error: ${e.message}`;
+        genError.classList.add('visible');
+      } finally {
+        setLoading(genBtn, false, 'Generate CLAUDE.md');
+      }
+    }
+
+    function showClaudemdGenOutput(content) {
+      claudemdPre.textContent = content;
+      genOutputSection.style.display = '';
+      improveOutputSection.style.display = 'none';
+      claudemdEmpty.style.display = 'none';
+      claudemdOutput.style.display = '';
+    }
+
+    // ── Improve CLAUDE.md ─────────────────────────────────────────────────────
+
+    improveBtn.addEventListener('click', improveClaudemd);
+
+    async function improveClaudemd() {
+      if (loading) return;
+
+      improveError.classList.remove('visible');
+
+      setLoading(improveBtn, true, 'Suggest improvements');
+
+      try {
+        const raw = await callAPI(CLAUDEMD_IMPROVE_SYSTEM, existingClaudemd.value.trim());
+        let parsed;
+        try {
+          parsed = JSON.parse(raw);
+        } catch {
+          // Try stripping markdown fences if present
+          const cleaned = raw.replace(/^```[\w]*\n?/m, '').replace(/```\s*$/m, '').trim();
+          parsed = JSON.parse(cleaned);
+        }
+        improvedContent = parsed.improved || '';
+        improvedChanges = parsed.changes || [];
+        showClaudemdImproveOutput(improvedContent, improvedChanges);
+      } catch (e) {
+        improveError.textContent = `Error: ${e.message}`;
+        improveError.classList.add('visible');
+      } finally {
+        setLoading(improveBtn, false, 'Suggest improvements');
+      }
+    }
+
+    function showClaudemdImproveOutput(content, changes) {
+      improvedPre.textContent = content;
+      changesList.innerHTML = '';
+      changes.forEach(c => {
+        const li = document.createElement('li');
+        li.textContent = c;
+        changesList.appendChild(li);
+      });
+      genOutputSection.style.display = 'none';
+      improveOutputSection.style.display = '';
+      claudemdEmpty.style.display = 'none';
+      claudemdOutput.style.display = '';
+    }
+
+    // ── Generate Skill ────────────────────────────────────────────────────────
+
+    genSkillBtn.addEventListener('click', generateSkill);
+
+    async function generateSkill() {
+      if (loading) return;
+
+      skillError.classList.remove('visible');
+
+      const name = skillName.value.trim();
+      const desc = skillDesc.value.trim();
+      const trigger = skillTrigger.value.trim();
+      const scope = document.querySelector('input[name="skill-scope"]:checked').value;
+
+      const parts = [`Skill name: ${name}`, `Description: ${desc}`];
+      if (trigger) parts.push(`Trigger condition: ${trigger}`);
+      parts.push(`Scope: ${scope} skill`);
+
+      setLoading(genSkillBtn, true, 'Generate skill.md');
+
+      try {
+        skillContent = await callAPI(SKILL_SYSTEM, parts.join('\n'));
+        showSkillOutput(name, scope, skillContent);
+      } catch (e) {
+        skillError.textContent = `Error: ${e.message}`;
+        skillError.classList.add('visible');
+      } finally {
+        setLoading(genSkillBtn, false, 'Generate skill.md');
+      }
+    }
+
+    function showSkillOutput(name, scope, content) {
+      skillPathLabel.textContent = skillPath(name, scope);
+      skillPre.textContent = content;
+      skillEmpty.style.display = 'none';
+      skillOutputEl.style.display = '';
+    }
+
+    // ── Copy buttons ──────────────────────────────────────────────────────────
+
+    function makeCopyBtn(btn, getContent) {
+      btn.addEventListener('click', () => {
+        const content = getContent();
+        if (!content) return;
+        navigator.clipboard.writeText(content).then(() => {
+          const orig = btn.textContent;
+          btn.textContent = '✓ Copied!';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.textContent = orig;
+            btn.classList.remove('copied');
+          }, 1800);
+        });
+      });
+    }
+
+    makeCopyBtn(copyClaudemdBtn, () => claudemdContent);
+    makeCopyBtn(copyImprovedBtn, () => improvedContent);
+    makeCopyBtn(copySkillBtn, () => skillContent);
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+
+    updateGenBtn();
+    updateImproveBtn();
+    updateSkillBtn();
+  </script>
+</body>
+</html>
