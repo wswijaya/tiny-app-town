@@ -641,19 +641,25 @@ CLAUDE.md is read by Claude Code to understand the project. Rules:
 
 Output ONLY the CLAUDE.md markdown. No explanation, no preamble.`;
 
-    const CLAUDEMD_IMPROVE_SYSTEM = `You are a Claude Code expert. Review and improve the provided CLAUDE.md.
+    const CLAUDEMD_IMPROVE_SYSTEM = `You are a Claude Code expert. Review and improve the provided CLAUDE.md content.
 
-Return ONLY valid JSON, parseable by JSON.parse() — no markdown fences:
+CRITICAL: Return ONLY valid JSON, parseable by JSON.parse() — no markdown fences, no explanation, no text outside the JSON object. This is non-negotiable regardless of input quality.
+
 {
   "improved": "<full improved CLAUDE.md content>",
   "changes": ["specific change 1", "specific change 2", ...]
 }
 
-When improving:
+Handle all input cases:
+- Complete CLAUDE.md: improve and return it
+- Partial fragment or single section: expand it into a proper CLAUDE.md, filling in sensible defaults for missing sections
+- Near-empty or unclear input: generate a well-structured CLAUDE.md template with the provided content incorporated
+- Never refuse or explain — always return the JSON structure
+
+When improving/generating:
 - Add missing sections (commands, conventions, gotchas) that would help Claude
 - Make vague instructions specific ("write clean code" → remove it or replace with concrete rule)
 - Remove redundant or obvious content
-- Fix formatting inconsistencies
 - Keep it concise — cut anything that doesn't guide Claude's behavior
 
 "changes": 3-6 specific, concrete improvements (name what was added/removed/changed and why).`;
@@ -924,15 +930,18 @@ Best practices:
         try {
           parsed = JSON.parse(raw);
         } catch {
-          // Try stripping markdown fences if present
           const cleaned = raw.replace(/^```[\w]*\n?/m, '').replace(/```\s*$/m, '').trim();
-          parsed = JSON.parse(cleaned);
+          try {
+            parsed = JSON.parse(cleaned);
+          } catch {
+            throw new Error('Could not parse response — try again, or paste more complete CLAUDE.md content.');
+          }
         }
         improvedContent = parsed.improved || '';
         improvedChanges = parsed.changes || [];
         showClaudemdImproveOutput(improvedContent, improvedChanges);
       } catch (e) {
-        improveError.textContent = `Error: ${e.message}`;
+        improveError.textContent = e.message;
         improveError.classList.add('visible');
       } finally {
         setLoading(improveBtn, false, 'Suggest improvements');
