@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prompt Improver — AI-powered</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f8fafc;
+      color: #1e293b;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+    /* Back nav */
+    #back-nav {
+      background: #2c2420;
+      padding: 8px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    #back-nav a {
+      color: #f7f4ef;
+      font-size: 12px;
+      font-family: system-ui, sans-serif;
+      text-decoration: none;
+      letter-spacing: 0.05em;
+      opacity: 0.8;
+    }
+    #back-nav a:hover { opacity: 1; }
+
+    /* App header */
+    #app-header {
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 13px 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #header-icon {
+      width: 26px;
+      height: 26px;
+      background: #2563eb;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    #header-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+    #header-pill {
+      font-size: 11px;
+      color: #94a3b8;
+      background: #f1f5f9;
+      padding: 2px 9px;
+      border-radius: 20px;
+      border: 1px solid #e2e8f0;
+      margin-left: 2px;
+    }
+
+    /* Main layout */
+    #layout {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      min-height: calc(100vh - 53px - 37px);
+    }
+
+    /* Sidebar */
+    #sidebar {
+      background: #ffffff;
+      border-right: 1px solid #e2e8f0;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 9px;
+    }
+
+    /* Textarea */
+    #prompt {
+      width: 100%;
+      min-height: 160px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      color: #1e293b;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 10px 13px;
+      resize: vertical;
+      line-height: 1.6;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    #prompt:focus { border-color: #93c5fd; }
+
+    /* Select */
+    #context-select {
+      width: 100%;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      color: #1e293b;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 9px 13px;
+      outline: none;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      transition: border-color 0.15s;
+    }
+    #context-select:focus { border-color: #93c5fd; }
+
+    /* Improve button */
+    #improve-btn {
+      padding: 11px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s;
+      cursor: pointer;
+    }
+    #improve-btn:not(:disabled) {
+      background: #2563eb;
+      color: #ffffff;
+    }
+    #improve-btn:not(:disabled):hover { background: #1d4ed8; }
+    #improve-btn:disabled {
+      background: #e2e8f0;
+      color: #94a3b8;
+      cursor: not-allowed;
+    }
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    /* Error box */
+    #error-box {
+      display: none;
+      font-size: 12px;
+      color: #b91c1c;
+      padding: 10px 13px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 7px;
+      line-height: 1.5;
+    }
+    #error-box.visible { display: block; }
+
+    /* Keyboard hint */
+    .kbd-hint {
+      font-size: 10px;
+      color: #94a3b8;
+      margin-top: 5px;
+    }
+
+    /* Right panel */
+    #right-panel {
+      overflow-y: auto;
+      padding: 28px 32px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Empty state */
+    #empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: #94a3b8;
+      min-height: 300px;
+    }
+    #empty-icon {
+      font-size: 40px;
+      opacity: 0.18;
+      margin-bottom: 14px;
+      line-height: 1;
+    }
+    #empty-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #94a3b8;
+      margin-bottom: 5px;
+    }
+    #empty-hint {
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+
+    /* Variants container */
+    #variants {
+      display: none;
+      flex-direction: column;
+      gap: 18px;
+    }
+    #variants.visible { display: flex; }
+
+    /* Variant card */
+    .variant-card {
+      border-radius: 10px;
+      border: 1px solid;
+      padding: 20px;
+    }
+    .variant-card.detailed {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+    .variant-card.concise {
+      background: #faf5ff;
+      border-color: #e9d5ff;
+    }
+    .variant-card.chain-of-thought {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    /* Card header */
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .card-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      color: #fff;
+      letter-spacing: 0.03em;
+    }
+    .detailed .card-badge { background: #1d4ed8; }
+    .concise .card-badge { background: #7c3aed; }
+    .chain-of-thought .card-badge { background: #15803d; }
+
+    .copy-btn {
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      background: #ffffff;
+      color: #475569;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 500;
+      transition: background 0.12s, color 0.12s;
+    }
+    .copy-btn:hover {
+      background: #f1f5f9;
+    }
+    .copy-btn.copied {
+      background: #f0fdf4;
+      color: #16a34a;
+      border-color: #bbf7d0;
+    }
+
+    /* Prompt display box */
+    .prompt-box {
+      background: #ffffff;
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 7px;
+      padding: 13px 15px;
+      font-family: 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+      font-size: 12.5px;
+      line-height: 1.65;
+      color: #1e293b;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-bottom: 12px;
+    }
+
+    /* What changed toggle */
+    .changes-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      color: #64748b;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.12s;
+    }
+    .changes-toggle:hover { color: #334155; }
+
+    .changes-list {
+      display: none;
+      margin: 10px 0 0 0;
+      padding: 0 0 0 18px;
+      list-style: disc;
+    }
+    .changes-list.open { display: block; }
+    .changes-list li {
+      font-size: 12px;
+      color: #475569;
+      line-height: 1.6;
+      margin-bottom: 4px;
+    }
+    .changes-list li:last-child { margin-bottom: 0; }
+  </style>
+</head>
+<body>
+
+  <div id="back-nav">
+    <a href="/">← Tiny App Town</a>
+  </div>
+
+  <div id="app-header">
+    <div id="header-icon">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5 2L13 4.5L5.5 12H3V9.5L10.5 2Z" stroke="white" stroke-width="1.4" stroke-linejoin="round" fill="none"/>
+        <path d="M8.5 4L11 6.5" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <span id="header-title">Prompt Improver</span>
+    <span id="header-pill">AI-powered</span>
+  </div>
+
+  <div id="layout">
+
+    <div id="sidebar">
+
+      <div>
+        <div class="section-label">Your prompt</div>
+        <textarea
+          id="prompt"
+          placeholder="Paste your rough prompt here…"
+        ></textarea>
+        <div class="kbd-hint">⌘↵ to improve</div>
+      </div>
+
+      <div>
+        <div class="section-label">Context</div>
+        <select id="context-select">
+          <option value="General AI">General AI</option>
+          <option value="Coding assistant">Coding assistant</option>
+          <option value="Creative writing">Creative writing</option>
+          <option value="Data analysis">Data analysis</option>
+          <option value="Image generation">Image generation</option>
+        </select>
+      </div>
+
+      <button id="improve-btn" disabled>✦ Improve prompt</button>
+
+      <div id="error-box"></div>
+
+    </div>
+
+    <div id="right-panel">
+
+      <div id="empty-state">
+        <div id="empty-icon">✦</div>
+        <div id="empty-title">Your improved prompts will appear here</div>
+        <div id="empty-hint">Enter a rough prompt on the left and click Improve</div>
+      </div>
+
+      <div id="variants"></div>
+
+    </div>
+
+  </div>
+
+  <script>
+    const SYSTEM_PROMPT = `You are a prompt engineering expert. Rewrite the user's AI prompt in three distinct styles.
+
+Return ONLY valid JSON — no markdown fences, no text before or after. Your entire response must be parseable by JSON.parse().
+
+{
+  "variants": [
+    {
+      "type": "detailed",
+      "prompt": "rewritten prompt text",
+      "changes": ["specific change and why", "another change"]
+    },
+    {
+      "type": "concise",
+      "prompt": "rewritten prompt text",
+      "changes": ["specific change and why"]
+    },
+    {
+      "type": "chain-of-thought",
+      "prompt": "rewritten prompt text",
+      "changes": ["specific change and why"]
+    }
+  ]
+}
+
+DETAILED variant: Add explicit output format requirements, constraints, edge case handling, relevant context, examples of desired format if helpful. Be specific and thorough.
+
+CONCISE variant: Remove filler phrases ("please", "I want you to", "can you", "I need"), vague qualifiers ("good", "nice", "comprehensive", "helpful"), and restate as a direct imperative. Aim for 40-60% fewer words while preserving full intent.
+
+CHAIN-OF-THOUGHT variant: Add explicit reasoning scaffolding — numbered steps, "think through X before answering", "consider edge cases", "first/then/finally" structure. Guide the model to reason before responding.
+
+For "changes": Write 2-4 specific annotations naming the technique used (e.g., "Added output format constraint to prevent verbose preamble", "Removed filler preamble 'Please help me...'", "Added 'think step by step' to trigger systematic reasoning"). Be concrete, not vague.`;
+
+    // DOM refs
+    const promptEl    = document.getElementById('prompt');
+    const contextSel  = document.getElementById('context-select');
+    const improveBtn  = document.getElementById('improve-btn');
+    const errorBox    = document.getElementById('error-box');
+    const emptyState  = document.getElementById('empty-state');
+    const variantsEl  = document.getElementById('variants');
+
+    // State
+    let loading = false;
+
+    // Button enable/disable
+    function updateBtn() {
+      improveBtn.disabled = loading || !promptEl.value.trim();
+    }
+    promptEl.addEventListener('input', updateBtn);
+
+    // Keyboard shortcut
+    promptEl.addEventListener('keydown', e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        improve();
+      }
+    });
+
+    improveBtn.addEventListener('click', improve);
+
+    async function improve() {
+      const prompt = promptEl.value.trim();
+      if (!prompt || loading) return;
+
+      loading = true;
+      updateBtn();
+      improveBtn.innerHTML = '<span class="spinner"></span>Improving…';
+      errorBox.classList.remove('visible');
+      errorBox.textContent = '';
+
+      try {
+        const res = await fetch('/api/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-6',
+            max_tokens: 2048,
+            system: SYSTEM_PROMPT,
+            messages: [{
+              role: 'user',
+              content: `Context: ${contextSel.value}\n\nImprove this prompt:\n\n${prompt}`
+            }]
+          })
+        });
+
+        const data = await res.json();
+
+        if (data.error) {
+          showError(`API error: ${data.error.message}`);
+          return;
+        }
+
+        const raw = data.content[0].text;
+        let parsed;
+        try {
+          parsed = JSON.parse(raw);
+        } catch (_) {
+          showError('Could not parse response — try again.\n\n' + raw);
+          return;
+        }
+
+        renderVariants(parsed.variants);
+
+      } catch (e) {
+        showError(`Request failed: ${e.message}`);
+      } finally {
+        loading = false;
+        improveBtn.innerHTML = '✦ Improve prompt';
+        updateBtn();
+      }
+    }
+
+    function showError(msg) {
+      errorBox.textContent = msg;
+      errorBox.classList.add('visible');
+    }
+
+    const VARIANT_META = {
+      'detailed': { label: 'Detailed', cls: 'detailed' },
+      'concise': { label: 'Concise', cls: 'concise' },
+      'chain-of-thought': { label: 'Chain-of-Thought', cls: 'chain-of-thought' },
+    };
+
+    function renderVariants(variants) {
+      variantsEl.innerHTML = '';
+
+      variants.forEach(v => {
+        const meta = VARIANT_META[v.type] || { label: v.type, cls: 'detailed' };
+
+        const card = document.createElement('div');
+        card.className = `variant-card ${meta.cls}`;
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'card-header';
+
+        const badge = document.createElement('span');
+        badge.className = 'card-badge';
+        badge.textContent = meta.label;
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-btn';
+        copyBtn.textContent = 'Copy';
+        copyBtn.addEventListener('click', () => {
+          navigator.clipboard.writeText(v.prompt).then(() => {
+            copyBtn.textContent = '✓ Copied!';
+            copyBtn.classList.add('copied');
+            setTimeout(() => {
+              copyBtn.textContent = 'Copy';
+              copyBtn.classList.remove('copied');
+            }, 1800);
+          });
+        });
+
+        header.appendChild(badge);
+        header.appendChild(copyBtn);
+
+        // Prompt box
+        const promptBox = document.createElement('div');
+        promptBox.className = 'prompt-box';
+        promptBox.textContent = v.prompt;
+
+        // What changed toggle
+        const changesToggle = document.createElement('button');
+        changesToggle.className = 'changes-toggle';
+        changesToggle.textContent = 'What changed →';
+
+        const changesList = document.createElement('ul');
+        changesList.className = 'changes-list';
+        (v.changes || []).forEach(c => {
+          const li = document.createElement('li');
+          li.textContent = c;
+          changesList.appendChild(li);
+        });
+
+        let changesOpen = false;
+        changesToggle.addEventListener('click', () => {
+          changesOpen = !changesOpen;
+          changesList.classList.toggle('open', changesOpen);
+          changesToggle.textContent = changesOpen ? 'What changed ↑' : 'What changed →';
+        });
+
+        card.appendChild(header);
+        card.appendChild(promptBox);
+        card.appendChild(changesToggle);
+        card.appendChild(changesList);
+
+        variantsEl.appendChild(card);
+      });
+
+      emptyState.style.display = 'none';
+      variantsEl.classList.add('visible');
+    }
+  </script>
+</body>
+</html>
