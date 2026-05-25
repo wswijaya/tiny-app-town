@@ -724,11 +724,12 @@ ${styleTag}
 
         let parsed;
         try {
-          // Strip markdown fences if model wraps response anyway
-          const clean = text.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim();
-          parsed = JSON.parse(clean);
+          const first = text.indexOf('{');
+          const last = text.lastIndexOf('}');
+          if (first === -1 || last === -1) throw new Error('no braces');
+          parsed = JSON.parse(text.slice(first, last + 1));
         } catch (_) {
-          showError('Could not parse response — try again.');
+          showError(`Could not parse response. Raw: ${text.slice(0, 200)}`);
           finishLoading();
           return;
         }
