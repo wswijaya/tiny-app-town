@@ -19,7 +19,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "npm install --prefix proxy && npm --prefix proxy start",
+    "start": "npm --prefix proxy start",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
