@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt Gym — Iterative Prompt Evaluation</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#1a1612;--ink2:#4a4540;--ink3:#8a847c;--ink4:#c4bfb8;
+  --surface:#faf8f5;--surface2:#f2efe9;--white:#ffffff;
+  --accent:#5c3d1e;--accent2:#8b5e3c;
+  --pass:#1d6b4a;--pass-bg:#e8f5ee;--pass-mid:#c3e6d0;
+  --fail:#8b2f1a;--fail-bg:#faeae6;--fail-mid:#f5cfc6;
+  --amber:#7a5a10;--amber-bg:#faf3e0;
+  --border:rgba(90,75,55,0.12);--border2:rgba(90,75,55,0.25);
+  --serif:Georgia,serif;--sans:system-ui,-apple-system,sans-serif;--mono:'Courier New',monospace
+}
+html,body{background:var(--surface);color:var(--ink);font-family:var(--sans);min-height:100vh}
+.app{max-width:1080px;margin:0 auto;padding-bottom:5rem}
+
+/* ── Header ── */
+.header{padding:0 1.5rem;border-bottom:0.5px solid var(--border2);display:flex;align-items:center;gap:0;background:var(--white);height:48px}
+.header-pip{width:7px;height:7px;border-radius:50%;background:var(--pass);flex-shrink:0;margin-right:10px}
+.header-title{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);margin-right:20px;white-space:nowrap}
+.header-tabs{display:flex;gap:0}
+.tab{padding:0 14px;height:48px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);cursor:pointer;border:none;border-bottom:2px solid transparent;background:none;font-family:var(--sans);transition:color .12s;white-space:nowrap}
+.tab:hover{color:var(--ink2)}
+.tab.active{color:var(--ink);border-bottom-color:var(--ink);font-weight:500}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.model-sel{font-size:11px;font-family:var(--sans);background:var(--surface2);border:0.5px solid var(--border2);color:var(--ink2);padding:4px 8px;border-radius:4px;cursor:pointer;letter-spacing:.02em}
+.model-sel:focus{outline:none;border-color:var(--accent2)}
+.n-chip{font-size:10px;letter-spacing:.1em;color:var(--ink3);background:var(--surface2);border:0.5px solid var(--border2);padding:3px 9px;border-radius:3px}
+
+/* ── Panels ── */
+.panel{display:none;padding:1.5rem 1.5rem 2rem}.panel.active{display:block}
+
+/* ── Prompt Panel ── */
+.version-bar{display:flex;align-items:center;gap:6px;margin-bottom:1.25rem;flex-wrap:wrap}
+.vbar-label{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink4);margin-right:2px;font-weight:500}
+.vpill{font-size:11px;padding:3px 11px;border-radius:12px;border:0.5px solid var(--border2);background:var(--surface2);color:var(--ink3);cursor:pointer;font-family:var(--sans);transition:all .12s}
+.vpill:hover{border-color:var(--accent2);color:var(--ink2)}
+.vpill.active{background:var(--accent);color:var(--white);border-color:var(--accent)}
+.field-label{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);margin-bottom:5px;display:block;font-weight:500}
+.desc-input{width:100%;border:0.5px solid var(--border2);border-radius:5px;padding:8px 11px;font-size:.82rem;font-family:var(--sans);color:var(--ink);background:var(--white);margin-bottom:1.1rem;transition:border-color .12s}
+.desc-input:focus{outline:none;border-color:var(--accent2)}
+.prompt-ta{width:100%;border:0.5px solid var(--border2);border-radius:5px;padding:11px 13px;font-size:.8rem;font-family:var(--mono);color:var(--ink);background:var(--white);resize:vertical;min-height:200px;line-height:1.65;margin-bottom:1rem;transition:border-color .12s}
+.prompt-ta:focus{outline:none;border-color:var(--accent2)}
+.save-row{display:flex;align-items:center;gap:8px}
+.note-input{flex:1;max-width:340px;border:0.5px solid var(--border2);border-radius:5px;padding:7px 10px;font-size:.8rem;font-family:var(--sans);color:var(--ink);background:var(--white);transition:border-color .12s}
+.note-input:focus{outline:none;border-color:var(--accent2)}
+.note-input::placeholder{color:var(--ink4)}
+.btn-primary{background:var(--ink);color:white;border:none;padding:7px 16px;font-size:.8rem;border-radius:4px;cursor:pointer;font-family:var(--sans);white-space:nowrap;transition:background .12s}
+.btn-primary:hover{background:var(--accent)}
+.btn-primary:disabled{opacity:.45;cursor:default}
+.btn-ghost{background:var(--surface2);color:var(--ink2);border:0.5px solid var(--border2);padding:6px 13px;font-size:.78rem;border-radius:4px;cursor:pointer;font-family:var(--sans);transition:border-color .12s}
+.btn-ghost:hover{border-color:var(--accent2);color:var(--ink)}
+.btn-ghost:disabled{opacity:.45;cursor:default}
+
+/* ── Tests Panel ── */
+.tests-header{display:flex;align-items:center;gap:10px;margin-bottom:1.1rem}
+.tests-count{font-size:.8rem;color:var(--ink3)}
+.test-card{border:0.5px solid var(--border2);background:var(--white);border-radius:7px;padding:1rem 1.1rem;margin-bottom:.7rem}
+.tc-header{display:flex;align-items:center;gap:8px;margin-bottom:.8rem}
+.tc-num{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink4);font-weight:500;white-space:nowrap}
+.tc-name{flex:1;border:none;border-bottom:0.5px solid var(--border2);padding:3px 0;font-size:.85rem;font-family:var(--sans);color:var(--ink);background:transparent;font-weight:500}
+.tc-name:focus{outline:none;border-bottom-color:var(--accent2)}
+.btn-del{background:none;border:none;color:var(--ink4);cursor:pointer;font-size:13px;padding:2px 5px;border-radius:3px;line-height:1;transition:all .1s}
+.btn-del:hover{color:var(--fail);background:var(--fail-bg)}
+.tc-field{margin-bottom:.65rem}
+.tc-ta{width:100%;border:0.5px solid var(--border2);border-radius:4px;padding:7px 9px;font-size:.78rem;font-family:var(--sans);color:var(--ink);background:var(--surface);resize:vertical;min-height:52px;line-height:1.5;transition:border-color .12s}
+.tc-ta:focus{outline:none;border-color:var(--accent2);background:var(--white)}
+.btn-add-test{background:none;border:0.5px dashed var(--border2);border-radius:6px;width:100%;padding:.75rem;font-size:.8rem;color:var(--ink3);cursor:pointer;font-family:var(--sans);margin-top:.2rem;transition:all .12s}
+.btn-add-test:hover{border-color:var(--accent2);color:var(--ink2);background:var(--surface2)}
+.empty-hint{text-align:center;padding:3rem 1rem 2rem;color:var(--ink3);font-family:var(--serif);font-style:italic;font-size:.88rem}
+
+/* ── Results Panel ── */
+.results-bar{display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;flex-wrap:wrap}
+.results-heading{font-size:.92rem;font-weight:500;color:var(--ink)}
+.results-meta{font-size:.75rem;color:var(--ink3);margin-top:1px}
+.run-controls{margin-left:auto;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.ver-sel{font-size:.78rem;font-family:var(--sans);background:var(--surface2);border:0.5px solid var(--border2);color:var(--ink2);padding:6px 9px;border-radius:4px;cursor:pointer}
+.ver-sel:focus{outline:none;border-color:var(--accent2)}
+
+/* ── Grid ── */
+.grid-wrap{overflow-x:auto}
+.grid{border-collapse:collapse;width:100%}
+.grid th{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);font-weight:500;padding:8px 8px 10px;text-align:center;border-bottom:0.5px solid var(--border2)}
+.grid th.vcol{text-align:left;padding-left:0;min-width:56px}
+.grid th.tcol{min-width:130px;max-width:180px;word-break:break-word}
+.grid td{padding:5px 5px;vertical-align:top;border-bottom:0.5px solid var(--border)}
+.grid td.vcell{padding-left:0;vertical-align:middle}
+.grid tr:last-child td{border-bottom:none}
+.vcell-badge{display:inline-block;font-size:11px;padding:3px 10px;border-radius:12px;background:var(--accent);color:white;font-weight:500;cursor:default}
+.cell{border-radius:6px;padding:8px 8px 7px;cursor:pointer;transition:filter .1s;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;user-select:none}
+.cell:hover{filter:brightness(.95)}
+.cell.c-empty{background:var(--surface2);cursor:default}.cell.c-empty:hover{filter:none}
+.cell.c-running{background:var(--surface2);cursor:default}.cell.c-running:hover{filter:none}
+.cell.c-pass{background:var(--pass-bg)}
+.cell.c-amber{background:var(--amber-bg)}
+.cell.c-fail{background:var(--fail-bg)}
+.cell-score{font-size:.9rem;font-weight:700;line-height:1}
+.cell.c-pass .cell-score{color:var(--pass)}
+.cell.c-fail .cell-score{color:var(--fail)}
+.cell.c-amber .cell-score{color:var(--amber)}
+.cell.c-empty .cell-score,.cell.c-running .cell-score{color:var(--ink4)}
+.cell-denom{font-size:.65rem;font-weight:400;opacity:.65}
+.dots-row{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;max-width:110px}
+.dot{width:14px;height:14px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;line-height:1}
+.d-pass{background:var(--pass);color:white}
+.d-fail{background:var(--fail);color:white}
+.d-empty{background:var(--border2);opacity:.35}
+.d-run{background:var(--border2);animation:blink .9s infinite}
+@keyframes blink{0%,100%{opacity:.3}50%{opacity:.85}}
+
+/* ── Detail Drawer ── */
+.detail-row td{padding:0;border-bottom:0.5px solid var(--border2)}
+.detail-inner{padding:1rem 1.25rem 1.25rem;border-top:0.5px solid var(--border2);background:var(--surface2)}
+.detail-hd{display:flex;align-items:center;gap:8px;margin-bottom:.55rem}
+.detail-vbadge{font-size:10px;padding:2px 9px;border-radius:10px;background:var(--accent);color:white;font-weight:600}
+.detail-tname{font-size:.85rem;font-weight:500;color:var(--ink)}
+.detail-criteria{font-size:.75rem;color:var(--ink3);font-style:italic;font-family:var(--serif);margin-bottom:.85rem;line-height:1.5}
+.run-list{display:flex;flex-direction:column;gap:.5rem}
+.run-item{background:var(--white);border:0.5px solid var(--border2);border-radius:5px;padding:.65rem .9rem;display:grid;grid-template-columns:52px 1fr;gap:.5rem .85rem;align-items:start}
+.run-item.ri-pass{border-left:3px solid var(--pass)}
+.run-item.ri-fail{border-left:3px solid var(--fail)}
+.run-badge{font-size:9px;letter-spacing:.1em;font-weight:600;padding:3px 7px;border-radius:3px;white-space:nowrap;text-align:center}
+.rb-pass{background:var(--pass-bg);color:var(--pass)}
+.rb-fail{background:var(--fail-bg);color:var(--fail)}
+.run-meta{display:flex;flex-direction:column;gap:3px;min-width:0}
+.run-reason{font-size:.73rem;color:var(--ink3);font-style:italic;font-family:var(--serif);line-height:1.45}
+.run-resp{font-size:.7rem;color:var(--ink2);font-family:var(--mono);white-space:pre-wrap;word-break:break-word;max-height:72px;overflow:hidden;line-height:1.45}
+.run-resp.expanded{max-height:none}
+.expand-link{font-size:.68rem;color:var(--accent2);cursor:pointer;display:block;margin-top:2px;background:none;border:none;padding:0;font-family:var(--sans);text-align:left}
+.expand-link:hover{color:var(--accent)}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--ink);color:white;padding:.6rem 1rem;border-radius:5px;font-size:.78rem;opacity:0;transition:opacity .18s;pointer-events:none;z-index:200;max-width:280px}
+.toast.show{opacity:1}
+
+/* ── Spinner ── */
+.spin{display:inline-block;width:11px;height:11px;border:1.5px solid var(--border2);border-top-color:var(--ink3);border-radius:50%;animation:rot .65s linear infinite;vertical-align:middle;margin-right:5px}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* ── Empty / Info states ── */
+.grid-empty{padding:2.5rem;text-align:center;color:var(--ink3);font-family:var(--serif);font-style:italic;font-size:.88rem}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-pip"></div>
+    <div class="header-title">Prompt Gym</div>
+    <div class="header-tabs">
+      <button class="tab active" data-tab="prompt" onclick="switchTab('prompt')">Prompt</button>
+      <button class="tab" data-tab="tests" onclick="switchTab('tests')">Tests</button>
+      <button class="tab" data-tab="results" onclick="switchTab('results')">Results</button>
+    </div>
+    <div class="header-right">
+      <select class="model-sel" id="modelSel">
+        <option value="claude-haiku-4-5-20251001">Haiku 4.5</option>
+        <option value="claude-sonnet-4-6" selected>Sonnet 4.6</option>
+        <option value="claude-opus-4-7">Opus 4.7</option>
+      </select>
+      <div class="n-chip">n = 6</div>
+    </div>
+  </div>
+
+  <!-- ── Prompt Panel ── -->
+  <div class="panel active" id="panel-prompt">
+    <div class="version-bar">
+      <span class="vbar-label">Version</span>
+      <div id="versionPills" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
+    <label class="field-label" for="taskDesc">Task description</label>
+    <input type="text" class="desc-input" id="taskDesc"
+      placeholder="One sentence — what does this prompt do? (used for auto-generating tests)">
+    <label class="field-label" for="promptTa">System prompt</label>
+    <textarea class="prompt-ta" id="promptTa" rows="11"
+      placeholder="Write your system prompt here…"></textarea>
+    <div class="save-row">
+      <input type="text" class="note-input" id="versionNote" placeholder="Optional note (e.g. 'added few-shot examples')">
+      <button class="btn-primary" id="btnSave" onclick="saveVersion()">Save as <span id="nextVerLabel">v0</span></button>
+    </div>
+  </div>
+
+  <!-- ── Tests Panel ── -->
+  <div class="panel" id="panel-tests">
+    <div class="tests-header">
+      <span class="tests-count" id="testsCount">0 tests</span>
+      <button class="btn-ghost" id="btnGen" onclick="generateTests()" style="margin-left:auto">Generate tests</button>
+    </div>
+    <div id="testCards"></div>
+    <button class="btn-add-test" onclick="addTest()">+ Add test manually</button>
+  </div>
+
+  <!-- ── Results Panel ── -->
+  <div class="panel" id="panel-results">
+    <div class="results-bar">
+      <div>
+        <div class="results-heading">Training set</div>
+        <div class="results-meta" id="resultsMeta">—</div>
+      </div>
+      <div class="run-controls">
+        <select class="ver-sel" id="runVerSel"></select>
+        <button class="btn-primary" id="btnRun" onclick="startRun()">Run</button>
+        <button class="btn-ghost" id="btnImprove" onclick="aiImprove()">AI Improve</button>
+      </div>
+    </div>
+    <div class="grid-wrap">
+      <table class="grid" id="grid"></table>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── Constants ────────────────────────────────────────────────────────────────
+const STORE = 'prompt-gym-v1';
+const N_RUNS = 6;
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let S = loadState();
+let isRunning = false;
+let openDetail = null; // { vId, tId } or null
+
+function loadState() {
+  try { const r = localStorage.getItem(STORE); if (r) return JSON.parse(r); } catch(_) {}
+  return { description: '', versions: [], tests: [], results: {} };
+}
+function persist() { localStorage.setItem(STORE, JSON.stringify(S)); }
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+function uid() { return Math.random().toString(36).slice(2, 9); }
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function currentModel() { return document.getElementById('modelSel').value; }
+
+function toast(msg, ms = 2200) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), ms);
+}
+
+function nextVerId() { return 'v' + S.versions.length; }
+
+// ─── Tab Switching ────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  if (name === 'results') { buildGrid(); updateResultsMeta(); }
+  if (name === 'tests') renderTests();
+  if (name === 'prompt') renderVersionPills();
+}
+
+// ─── Prompt Panel ─────────────────────────────────────────────────────────────
+let activeVerIdx = null;
+
+function renderVersionPills() {
+  const wrap = document.getElementById('versionPills');
+  wrap.innerHTML = S.versions.map((v, i) =>
+    `<button class="vpill${activeVerIdx === i ? ' active' : ''}"
+       title="${esc(v.note)}" onclick="selectVersion(${i})">${v.id}</button>`
+  ).join('');
+  document.getElementById('nextVerLabel').textContent = nextVerId();
+}
+
+function selectVersion(idx) {
+  activeVerIdx = idx;
+  const v = S.versions[idx];
+  document.getElementById('promptTa').value = v.prompt;
+  document.getElementById('taskDesc').value = S.description || '';
+  renderVersionPills();
+}
+
+function saveVersion() {
+  const prompt = document.getElementById('promptTa').value.trim();
+  if (!prompt) { toast('Prompt cannot be empty'); return; }
+  const note = document.getElementById('versionNote').value.trim();
+  S.description = document.getElementById('taskDesc').value.trim();
+  const v = { id: nextVerId(), prompt, note, ts: Date.now() };
+  S.versions.push(v);
+  activeVerIdx = S.versions.length - 1;
+  document.getElementById('versionNote').value = '';
+  persist();
+  renderVersionPills();
+  syncRunVerSel();
+  toast('Saved as ' + v.id);
+}
+
+// ─── Tests Panel ─────────────────────────────────────────────────────────────
+function renderTests() {
+  const wrap = document.getElementById('testCards');
+  const count = document.getElementById('testsCount');
+  count.textContent = S.tests.length + ' test' + (S.tests.length === 1 ? '' : 's');
+  if (!S.tests.length) {
+    wrap.innerHTML = '<div class="empty-hint">No tests yet — generate from your prompt or add manually.</div>';
+    return;
+  }
+  wrap.innerHTML = S.tests.map((t, i) => `
+    <div class="test-card">
+      <div class="tc-header">
+        <span class="tc-num">Test ${i + 1}</span>
+        <input class="tc-name" value="${esc(t.name)}" placeholder="test name"
+          onchange="patchTest('${t.id}','name',this.value)">
+        <button class="btn-del" onclick="removeTest('${t.id}')" title="Delete">✕</button>
+      </div>
+      <div class="tc-field">
+        <span class="field-label">Input</span>
+        <textarea class="tc-ta" rows="2" placeholder="User message sent to the prompt under test"
+          onchange="patchTest('${t.id}','input',this.value)">${esc(t.input)}</textarea>
+      </div>
+      <div class="tc-field" style="margin-bottom:0">
+        <span class="field-label">Criteria</span>
+        <textarea class="tc-ta" rows="2" placeholder="What counts as a passing response?"
+          onchange="patchTest('${t.id}','criteria',this.value)">${esc(t.criteria)}</textarea>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addTest() {
+  S.tests.push({ id: uid(), name: 'test ' + (S.tests.length + 1), input: '', criteria: '' });
+  persist();
+  renderTests();
+}
+
+function removeTest(id) {
+  S.tests = S.tests.filter(t => t.id !== id);
+  Object.keys(S.results).forEach(k => { if (k.split(':')[1] === id) delete S.results[k]; });
+  persist();
+  renderTests();
+}
+
+function patchTest(id, field, value) {
+  const t = S.tests.find(t => t.id === id);
+  if (t) { t[field] = value; persist(); }
+}
+
+async function generateTests() {
+  const prompt = document.getElementById('promptTa').value.trim()
+    || (S.versions.length ? S.versions[S.versions.length - 1].prompt : '');
+  const desc = document.getElementById('taskDesc').value.trim() || S.description || '';
+  if (!prompt && !desc) { toast('Add a prompt or description first'); return; }
+
+  const btn = document.getElementById('btnGen');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>Generating…';
+
+  const userMsg = [
+    'System prompt under evaluation:',
+    '<prompt>',
+    prompt || '(none yet)',
+    '</prompt>',
+    '',
+    'Task description: ' + (desc || '(none provided)'),
+    '',
+    'Generate exactly 5 test cases. Mix:',
+    '- 1–2 control cases (typical happy-path inputs that should pass)',
+    '- 1 edge case (empty input, very short, ambiguous, or off-topic)',
+    '- 1 adversarial or tricky case (jailbreak attempt, conflicting instructions, or domain boundary)',
+    '- 1 nuanced domain-specific case',
+    '',
+    'Return ONLY a JSON array with no extra text or markdown:',
+    '[{"name":"short_slug","input":"user message text","criteria":"what a PASS response must do"}, …]',
+  ].join('\n');
+
+  try {
+    const data = await callAPI({
+      system: 'You are an LLM evaluation engineer. Generate diverse, realistic test cases for prompt evaluation. Return only valid JSON.',
+      user: userMsg,
+      maxTokens: 1600,
+    });
+    const raw = data.content[0].text;
+    const m = raw.match(/\[[\s\S]*\]/);
+    if (!m) throw new Error('No JSON array found');
+    const parsed = JSON.parse(m[0]);
+    if (!Array.isArray(parsed)) throw new Error('Not an array');
+    S.tests = parsed.map(t => ({
+      id: uid(),
+      name: String(t.name || 'test').slice(0, 40),
+      input: String(t.input || ''),
+      criteria: String(t.criteria || ''),
+    }));
+    persist();
+    renderTests();
+    toast('Generated ' + S.tests.length + ' tests');
+  } catch (e) {
+    toast('Generation failed: ' + e.message, 3500);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generate tests';
+  }
+}
+
+// ─── Results Grid ─────────────────────────────────────────────────────────────
+function syncRunVerSel() {
+  const sel = document.getElementById('runVerSel');
+  const prev = sel.value;
+  sel.innerHTML = S.versions.map(v =>
+    `<option value="${v.id}">${v.id}${v.note ? ' · ' + v.note.slice(0, 28) : ''}</option>`
+  ).join('');
+  if (S.versions.find(v => v.id === prev)) sel.value = prev;
+  else if (S.versions.length) sel.value = S.versions[S.versions.length - 1].id;
+}
+
+function updateResultsMeta() {
+  document.getElementById('resultsMeta').textContent =
+    `${S.tests.length} test${S.tests.length === 1 ? '' : 's'} · n=${N_RUNS} · ${currentModel()}`;
+}
+
+function buildGrid() {
+  const grid = document.getElementById('grid');
+  if (!S.versions.length || !S.tests.length) {
+    grid.innerHTML = `<tr><td colspan="99" class="grid-empty">Save a prompt version and add test cases to begin.</td></tr>`;
+    return;
+  }
+
+  let html = '<thead><tr><th class="vcol"></th>';
+  S.tests.forEach(t => {
+    html += `<th class="tcol">${esc(t.name)}<br><span style="font-weight:400;opacity:.6;font-size:8px;letter-spacing:.05em;text-transform:none">${esc(t.input.slice(0, 32))}${t.input.length > 32 ? '…' : ''}</span></th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  S.versions.forEach(v => {
+    html += `<tr><td class="vcell"><span class="vcell-badge">${v.id}</span></td>`;
+    S.tests.forEach(t => {
+      const key = v.id + ':' + t.id;
+      const r = S.results[key];
+      html += `<td id="td-${v.id}-${t.id}"><div class="${cellCls(r)}" onclick="toggleDetail('${v.id}','${t.id}')">${cellHtml(r)}</div></td>`;
+    });
+    html += '</tr>';
+    // Detail drawer row (hidden)
+    html += `<tr class="detail-row" id="dr-${v.id}" style="display:none">
+      <td colspan="${S.tests.length + 1}">
+        <div class="detail-inner" id="dp-${v.id}"></div>
+      </td>
+    </tr>`;
+  });
+
+  html += '</tbody>';
+  grid.innerHTML = html;
+}
+
+function cellCls(r) {
+  if (!r || !r.runs.length) return 'cell c-empty';
+  const done = r.runs.filter(x => x != null).length;
+  if (done < N_RUNS || r.running) return 'cell c-running';
+  const passes = r.runs.filter(x => x === 'PASS').length;
+  if (passes >= 5) return 'cell c-pass';
+  if (passes <= 1) return 'cell c-fail';
+  return 'cell c-amber';
+}
+
+function cellHtml(r) {
+  const total = N_RUNS;
+  const runs = r ? (r.runs || []) : [];
+  const done = runs.filter(x => x != null).length;
+  const passes = runs.filter(x => x === 'PASS').length;
+
+  let scoreHtml = '';
+  if (done > 0) {
+    scoreHtml = `<div class="cell-score">${passes}<span class="cell-denom">/${total}</span></div>`;
+  }
+
+  const dots = Array.from({ length: total }, (_, i) => {
+    if (i >= runs.length || runs[i] == null) {
+      return (r && r.running && i === done)
+        ? '<div class="dot d-run">·</div>'
+        : '<div class="dot d-empty"></div>';
+    }
+    return runs[i] === 'PASS'
+      ? '<div class="dot d-pass">✓</div>'
+      : '<div class="dot d-fail">✕</div>';
+  }).join('');
+
+  return scoreHtml + `<div class="dots-row">${dots}</div>`;
+}
+
+function refreshCell(vId, tId) {
+  const td = document.getElementById(`td-${vId}-${tId}`);
+  if (!td) return;
+  const r = S.results[`${vId}:${tId}`];
+  td.innerHTML = `<div class="${cellCls(r)}" onclick="toggleDetail('${vId}','${tId}')">${cellHtml(r)}</div>`;
+}
+
+function toggleDetail(vId, tId) {
+  const r = S.results[`${vId}:${tId}`];
+  if (!r || !r.runs.filter(x => x != null).length) return;
+
+  const dr = document.getElementById(`dr-${vId}`);
+  const dp = document.getElementById(`dp-${vId}`);
+  if (!dr || !dp) return;
+
+  const same = openDetail && openDetail.vId === vId && openDetail.tId === tId;
+  if (same) {
+    dr.style.display = 'none';
+    openDetail = null;
+    return;
+  }
+
+  openDetail = { vId, tId };
+  dr.style.display = '';
+
+  const test = S.tests.find(t => t.id === tId);
+  const runs = r.runs || [];
+  const reasons = r.reasons || [];
+  const responses = r.responses || [];
+
+  const itemsHtml = runs.map((verdict, i) => {
+    if (verdict == null) return '';
+    const iPass = verdict === 'PASS';
+    return `
+      <div class="run-item ${iPass ? 'ri-pass' : 'ri-fail'}">
+        <div><span class="run-badge ${iPass ? 'rb-pass' : 'rb-fail'}">${verdict}</span></div>
+        <div class="run-meta">
+          <div class="run-reason">${esc(reasons[i] || '')}</div>
+          <div class="run-resp" id="rr-${vId}-${tId}-${i}">${esc((responses[i] || '').slice(0, 280))}${(responses[i] || '').length > 280 ? '…' : ''}</div>
+          ${(responses[i] || '').length > 280 ? `<button class="expand-link" onclick="expandResp('${vId}','${tId}',${i})">show full response</button>` : ''}
+        </div>
+      </div>`;
+  }).filter(Boolean).join('');
+
+  dp.innerHTML = `
+    <div class="detail-hd">
+      <span class="detail-vbadge">${vId}</span>
+      <span class="detail-tname">${esc(test ? test.name : tId)}</span>
+    </div>
+    <div class="detail-criteria">${esc(test ? test.criteria : '')}</div>
+    <div class="run-list">${itemsHtml || '<em style="color:var(--ink4);font-size:.8rem">No completed runs yet.</em>'}</div>`;
+}
+
+function expandResp(vId, tId, i) {
+  const r = S.results[`${vId}:${tId}`];
+  const el = document.getElementById(`rr-${vId}-${tId}-${i}`);
+  if (el && r) {
+    el.textContent = r.responses[i] || '';
+    el.nextElementSibling?.remove();
+  }
+}
+
+// ─── Running Evals ────────────────────────────────────────────────────────────
+async function startRun() {
+  if (isRunning) return;
+  if (!S.versions.length) { toast('Save a prompt version first'); return; }
+  if (!S.tests.length) { toast('Add test cases first'); return; }
+
+  const vId = document.getElementById('runVerSel').value;
+  const version = S.versions.find(v => v.id === vId);
+  if (!version) return;
+
+  isRunning = true;
+  openDetail = null;
+  document.getElementById('btnRun').disabled = true;
+  document.getElementById('btnRun').innerHTML = '<span class="spin"></span>Running…';
+  document.getElementById('btnImprove').disabled = true;
+
+  // Mark all cells for this version as running
+  S.tests.forEach(t => {
+    S.results[`${vId}:${t.id}`] = { runs: [], reasons: [], responses: [], running: true };
+  });
+  persist();
+  switchTab('results');
+  buildGrid();
+
+  await Promise.all(S.tests.map(t => runOneTest(version, t)));
+
+  isRunning = false;
+  document.getElementById('btnRun').disabled = false;
+  document.getElementById('btnRun').textContent = 'Run';
+  document.getElementById('btnImprove').disabled = false;
+  persist();
+  toast('Eval complete ✓');
+}
+
+async function runOneTest(version, test) {
+  const key = `${version.id}:${test.id}`;
+  const rec = { runs: [], reasons: [], responses: [], running: true };
+  S.results[key] = rec;
+
+  for (let i = 0; i < N_RUNS; i++) {
+    try {
+      // Subject: run the prompt under test
+      const subData = await callAPI({
+        system: version.prompt,
+        user: test.input,
+        maxTokens: 1024,
+      });
+      const subText = subData.content[0].text;
+
+      // Judge: evaluate the response
+      const judgeData = await callAPI({
+        system: 'You are an objective LLM evaluator. Assess responses strictly and fairly against the given criteria.',
+        user: [
+          'CRITERIA:',
+          test.criteria,
+          '',
+          'USER INPUT:',
+          test.input,
+          '',
+          'MODEL RESPONSE:',
+          subText,
+          '',
+          'Does the response PASS or FAIL the criteria?',
+          'Reply with JSON only — no other text:',
+          '{"verdict":"PASS","reason":"one sentence"} or {"verdict":"FAIL","reason":"one sentence"}',
+        ].join('\n'),
+        maxTokens: 180,
+      });
+      const judgeText = judgeData.content[0].text;
+
+      let verdict = 'FAIL', reason = '';
+      try {
+        const m = judgeText.match(/\{[\s\S]*?\}/);
+        if (m) {
+          const p = JSON.parse(m[0]);
+          verdict = p.verdict === 'PASS' ? 'PASS' : 'FAIL';
+          reason = String(p.reason || '');
+        } else {
+          verdict = /\bPASS\b/i.test(judgeText) ? 'PASS' : 'FAIL';
+        }
+      } catch (_) {
+        verdict = /\bPASS\b/i.test(judgeText) ? 'PASS' : 'FAIL';
+      }
+
+      rec.runs.push(verdict);
+      rec.reasons.push(reason);
+      rec.responses.push(subText);
+
+    } catch (e) {
+      rec.runs.push('FAIL');
+      rec.reasons.push('API error: ' + e.message);
+      rec.responses.push('');
+    }
+
+    // Live cell update
+    S.results[key] = { ...rec };
+    refreshCell(version.id, test.id);
+    persist();
+  }
+
+  rec.running = false;
+  S.results[key] = { ...rec };
+  refreshCell(version.id, test.id);
+  persist();
+}
+
+// ─── AI Improve ───────────────────────────────────────────────────────────────
+async function aiImprove() {
+  if (!S.versions.length) { toast('No versions to improve'); return; }
+  const vId = document.getElementById('runVerSel').value;
+  const version = S.versions.find(v => v.id === vId);
+  if (!version) return;
+
+  // Collect failing test summaries
+  const failing = [];
+  S.tests.forEach(t => {
+    const r = S.results[`${vId}:${t.id}`];
+    if (!r) return;
+    const failRuns = r.runs
+      .map((v, i) => ({ verdict: v, reason: r.reasons[i], response: r.responses[i] }))
+      .filter(x => x.verdict === 'FAIL');
+    if (failRuns.length) failing.push({ test: t, sample: failRuns[0] });
+  });
+
+  if (!failing.length) { toast('No failures found — prompt is already passing all tests!'); return; }
+
+  const btn = document.getElementById('btnImprove');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>Improving…';
+
+  const failBlock = failing.map(({ test, sample }) =>
+    `Test: "${test.name}"\nInput: ${test.input}\nCriteria: ${test.criteria}\nSample response: "${(sample.response || '').slice(0, 200)}"\nJudge reason: "${sample.reason || ''}"`
+  ).join('\n\n---\n\n');
+
+  try {
+    const data = await callAPI({
+      system: 'You are an expert prompt engineer. Improve system prompts to fix LLM evaluation failures. Be specific and targeted.',
+      user: [
+        'Current system prompt:',
+        '<prompt>',
+        version.prompt,
+        '</prompt>',
+        '',
+        `Failed test cases (${failing.length} of ${S.tests.length}):`,
+        failBlock,
+        '',
+        'Write an improved system prompt that addresses these failures without breaking passing tests.',
+        'Return ONLY the improved prompt text — no explanation, no markdown code fences.',
+      ].join('\n'),
+      maxTokens: 1600,
+    });
+    const improved = data.content[0].text.trim();
+    document.getElementById('promptTa').value = improved;
+    document.getElementById('versionNote').value = `ai-improved from ${vId}`;
+    document.getElementById('taskDesc').value = S.description || '';
+    switchTab('prompt');
+    renderVersionPills();
+    toast('Improved prompt ready — review and save as ' + nextVerId());
+  } catch (e) {
+    toast('Improve failed: ' + e.message, 3500);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'AI Improve';
+  }
+}
+
+// ─── API ─────────────────────────────────────────────────────────────────────
+async function callAPI({ system, user, maxTokens = 1024 }) {
+  const resp = await fetch('/api/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: currentModel(),
+      max_tokens: maxTokens,
+      system,
+      messages: [{ role: 'user', content: user }],
+    }),
+  });
+  if (!resp.ok) {
+    const txt = await resp.text();
+    throw new Error(`${resp.status}: ${txt.slice(0, 120)}`);
+  }
+  return resp.json();
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+function init() {
+  if (S.versions.length) {
+    activeVerIdx = S.versions.length - 1;
+    document.getElementById('promptTa').value = S.versions[activeVerIdx].prompt;
+    document.getElementById('taskDesc').value = S.description || '';
+  }
+  renderVersionPills();
+  renderTests();
+  syncRunVerSel();
+}
+
+init();
+</script>
+</body>
+</html>
