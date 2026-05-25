@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { handle } from 'hono/vercel'
 
-export const config = { runtime: 'edge' }
+export const config = { maxDuration: 60 }
 
 const app = new Hono().basePath('/api')
 
