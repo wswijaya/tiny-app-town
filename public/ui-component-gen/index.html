@@ -501,14 +501,16 @@
 Return ONLY valid JSON parseable by JSON.parse() — no markdown fences, no text outside the JSON:
 {
   "html": "<the component HTML markup, no style tags>",
-  "css": "<all CSS rules as a string, empty string if Tailwind>"
+  "css": "<all CSS rules as a string, empty string if Tailwind>",
+  "preview": "<complete self-contained HTML document with <!DOCTYPE html> that renders the component centered on a neutral background>"
 }
 
 Rules:
 - Use semantic HTML elements
 - Pure CSS: use CSS custom properties, include :hover/:focus states, smooth transitions
-- Tailwind: use Tailwind classes only (no custom CSS)
+- Tailwind: use Tailwind classes only (no custom CSS), include the Tailwind CDN in the preview document
 - No external image URLs — use CSS gradients or SVG placeholders for images
+- The preview document should show the component centered with good padding, neutral background (#f8fafc), with appropriate fonts loaded
 - Component should look complete and polished, not like a wireframe
 - Match the specified style exactly:
   - Modern: clean sans-serif, subtle shadows (0 1px 3px rgba(0,0,0,0.1)), smooth hover transitions, #fff cards
@@ -523,6 +525,7 @@ Rules:
     let selectedFramework = 'Pure CSS';
     let currentHtml = '';
     let currentCss = '';
+    let currentPreview = '';
     let loading = false;
     let activeTab = 'preview';
     let previewBlobUrl = null;
@@ -651,7 +654,7 @@ ${styleTag}
       if (previewBlobUrl) {
         URL.revokeObjectURL(previewBlobUrl);
       }
-      const blob = new Blob([buildPreviewDoc()], { type: 'text/html' });
+      const blob = new Blob([currentPreview || buildPreviewDoc()], { type: 'text/html' });
       previewBlobUrl = URL.createObjectURL(blob);
       previewFrame.src = previewBlobUrl;
 
@@ -692,7 +695,7 @@ ${styleTag}
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: 'claude-sonnet-4-6',
-            max_tokens: 4096,
+            max_tokens: 8192,
             system: SYSTEM_PROMPT,
             messages: [{
               role: 'user',
@@ -732,6 +735,7 @@ ${styleTag}
 
         currentHtml = parsed.html || '';
         currentCss = parsed.css || '';
+        currentPreview = parsed.preview || '';
 
         renderOutput();
 
